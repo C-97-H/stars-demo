@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI手势控制粒子系统 (蓝色版)</title>
+    <style>
+        /* --- 基础样式 --- */
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Helvetica, sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+        #input-video { display: none; }
+        
+        /* --- 加载动画 --- */
+        #loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #00aaff; font-size: 1.2rem; text-align: center; pointer-events: none;
+            text-shadow: 0 0 10px #00aaff; z-index: 100; width: 80%;
+        }
+
+        /* --- UI 悬浮设置按钮 (常驻，隐藏面板时显示) --- */
+        #settings-toggle {
+            position: absolute; top: 20px; right: 20px;
+            width: 44px; height: 44px;
+            background: rgba(0, 170, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 170, 255, 0.4);
+            border-radius: 50%;
+            color: #fff; font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 50; /* 层级很高，保证可点 */
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.3);
+            
+            /* 默认隐藏，只有面板关闭时才显示 (通过JS控制透明度) */
+            opacity: 0; pointer-events: none; 
+        }
+        #settings-toggle:hover { background: rgba(0, 170, 255, 0.5); transform: rotate(90deg) scale(1.1); }
+
+        /* --- 控制面板容器 (弹性布局) --- */
+        #ui-panel {
+            position: absolute; 
+            background: rgba(8, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 170, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            
+            /* 过渡动画 */
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+            transform-origin: top right;
+        }
+
+        /* 隐藏状态 */
+        .panel-hidden {
+            transform: scale(0.9) translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        /* 面板头部 */
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel-title { color: #00aaff; font-weight: 600; font-size: 16px; letter-spacing: 1px; }
+        .close-btn {
+            background: none; border: none; color: rgba(255,255,255,0.6);
+            font-size: 24px; cursor: pointer; padding: 0 8px; border-radius: 4px;
+        }
+        .close-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+        /* Lil-gui 容器调整 */
+        #gui-container { width: 100%; }
+        /* 覆盖 lil-gui 默认样式适配蓝色主题 */
+        .lil-gui { --background-color: transparent; --text-color: #eee; --width: 100%; --widget-color: #333; --hover-color: #444; --focus-color: #555; --number-color: #00aaff; --string-color: #00aaff; }
+        .lil-gui .title { color: #00aaff; }
+
+        /* 全屏按钮 */
+        .action-btn {
+            background: linear-gradient(90deg, #00aaff, #0077cc);
+            border: none; padding: 12px; color: white; border-radius: 8px;
+            cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px;
+            font-size: 14px; transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 170, 255, 0.3);
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        /* 状态指示文字 */
+        #status {
+            position: absolute; bottom: 30px; left: 0; width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.6); font-size: 14px;
+            pointer-events: none; text-shadow: 0 1px 2px #000;
+        }
+        .highlight { color: #00ff00 !important; font-weight: bold; }
+
+        /* ================= 响应式布局适配 ================= */
+        
+        /* 1. 桌面端 (Desktop) */
+        @media (min-width: 1024px) {
+            #ui-panel { top: 60px; right: 20px; width: 280px; }
+        }
+        
+        /* 平板适配 */
+        @media (min-width: 769px) {
+            #ui-panel { top: 60px; right: 25px; width: 280px; }
+        }
+
+        /* 2. 平板/手机端 (Tablet & Mobile) */
+        @media (max-width: 768px) {
+            #settings-toggle { top: 15px; right: 15px; }
+            
+            #ui-panel {
+                /* 移动端底部弹窗 */
+                top: auto; bottom: 20px; left: 20px; right: 20px;
+                width: auto; 
+                transform-origin: bottom center;
+            }
+
+            .panel-hidden {
+                transform: translateY(20px) scale(0.95);
+            }
+            
+            #loader { font-size: 1rem; width: 90%; }
+        }
+    </style>
+    
+    <!-- 引入库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.17.0/dist/lil-gui.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- 1. 加载提示 -->
+    <div id="loader">
+        <div>正在启动 AI 内核...</div>
+        <div style="font-size:12px; color:#aaa; margin-top:5px;">请允许摄像头权限以进行交互</div>
+    </div>
+    
+    <video id="input-video" playsinline></video>
+    
+    <div id="status">等待手势...</div>
+
+    <!-- 4. 设置按钮 (齿轮 - 点击此处打开面板) -->
+    <div id="settings-toggle" title="打开设置">⚙️</div>
+
+    <!-- 5. 控制面板 (可折叠) -->
+    <div id="ui-panel">
+        <div class="panel-header">
+            <span class="panel-title">粒子控制器</span>
+            <button class="close-btn" id="ui-close" title="收起面板">×</button>
+        </div>
+        
+        <div id="gui-container"></div>
+        
+        <button class="action-btn" id="fullscreen-btn">全屏沉浸模式</button>
+    </div>
+
+<script>
+    // --- 1. UI 交互逻辑 (控制面板显隐) ---
+    const uiPanel = document.getElementById('ui-panel');
+    const settingsBtn = document.getElementById('settings-toggle');
+    const closeBtn = document.getElementById('ui-close');
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // 面板切换函数
+    function togglePanel(show) {
+        if (show) {
+            // 打开面板：移除隐藏类，隐藏齿轮
+            uiPanel.classList.remove('panel-hidden');
+            settingsBtn.style.opacity = '0'; 
+            settingsBtn.style.pointerEvents = 'none';
+        } else {
+            // 关闭面板：添加隐藏类，显示齿轮
+            uiPanel.classList.add('panel-hidden');
+            settingsBtn.style.opacity = '1'; 
+            settingsBtn.style.pointerEvents = 'auto';
+        }
+    }
+
+    // 绑定事件：点击齿轮打开，点击关闭按钮关闭
+    settingsBtn.addEventListener('click', () => togglePanel(true));
+    closeBtn.addEventListener('click', () => togglePanel(false));
+
+    // 默认状态：移动端收起，电脑端展开
+    if (isMobile) {
+        togglePanel(false); // 手机默认隐藏，只显示齿轮
+    } else {
+        togglePanel(true);  // PC默认展开
+    }
+
+    // --- 2. Three.js 场景初始化 ---
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = isMobile ? 40 : 30; 
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+    document.body.appendChild(renderer.domElement);
+
+    // --- 3. 粒子系统逻辑 ---
+    const particleCount = isMobile ? 8000 : 18000;
+    
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const targetPositions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    
+    // 初始化位置
+    for (let i = 0; i < particleCount * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 100;
+        targetPositions[i] = positions[i];
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+        size: isMobile ? 0.3 : 0.2,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        transparent: true,
+        opacity: 0.8
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+
+    // --- 4. 状态管理与颜色初始化 ---
+    const state = {
+        currentShape: 'heart',
+        baseColor: '#00aaff', // 默认设为蓝色
+        spreadFactor: 1.0 
+    };
+
+    // 辅助函数：更新所有粒子颜色
+    function updateColors(hexColor) {
+        const color = new THREE.Color(hexColor);
+        const colorsAttr = geometry.attributes.color;
+        for(let i=0; i<particleCount; i++) {
+            // 增加一点亮度随机变化，让粒子更有质感
+            const shade = 0.5 + Math.random() * 0.7; 
+            colorsAttr.setXYZ(i, color.r * shade, color.g * shade, color.b * shade);
+        }
+        colorsAttr.needsUpdate = true;
+    }
+
+    // *** 关键：启动时立即应用蓝色 ***
+    updateColors(state.baseColor);
+
+    // --- 5. 形状生成算法 ---
+    const shapes = {
+        heart: () => {
+            const arr = [];
+            for(let i=0; i<particleCount; i++) {
+                let t = Math.random() * Math.PI * 2;
+                let u = Math.random() + Math.random();
+                let r = (u > 1 ? 2 - u : u) * 10; 
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                let z = (Math.random() - 0.5) * 5; 
+                x *= 0.8; y *= 0.8;
+                let scale = Math.random(); 
+                arr.push(x * scale, y * scale, z * scale);
+            }
+            return arr;
+        },
+        saturn: () => {
+            const arr = [];
+            for(let i=0; i<particleCount; i++) {
+                if(i < particleCount * 0.7) {
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos((Math.random() * 2) - 1);
+                    const r = 8;
+                    arr.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                } else {
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = 12 + Math.random() * 6;
+                    arr.push(r * Math.cos(angle), (Math.random()-0.5) * 0.5, r * Math.sin(angle));
+                }
+            }
+            const euler = new THREE.Euler(0.4, 0, 0.4);
+            const vec = new THREE.Vector3();
+            for(let i=0; i<arr.length; i+=3){
+                vec.set(arr[i], arr[i+1], arr[i+2]);
+                vec.applyEuler(euler);
+                arr[i] = vec.x; arr[i+1] = vec.y; arr[i+2] = vec.z;
+            }
+            return arr;
+        },
+        flower: () => {
+            const arr = [];
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            for(let i=0; i<particleCount; i++) {
+                const r = Math.sqrt(i) * 0.2;
+                const theta = i * goldenAngle;
+                const y = Math.sin(r * 0.5) * 5 - 5; 
+                arr.push(r * Math.cos(theta), y, r * Math.sin(theta));
+            }
+            return arr;
+        },
+        buddha: () => {
+            const arr = [];
+            for(let i=0; i<particleCount; i++) {
+                let x, y, z;
+                const rand = Math.random();
+                if (rand < 0.25) {
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const r = 3;
+                    x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.sin(phi) * Math.sin(theta) + 8; z = r * Math.cos(phi);
+                } else if (rand < 0.65) {
+                    const theta = Math.random() * Math.PI * 2;
+                    const h = (Math.random() - 0.5) * 10; 
+                    const r = 6 * (1 - Math.abs(h)/12); 
+                    x = r * Math.cos(theta); y = h; z = r * Math.sin(theta);
+                } else {
+                    const theta = Math.random() * Math.PI; 
+                    const r = 8 + Math.random() * 4;
+                    x = r * Math.cos(theta * 2); y = -6 + (Math.random()-0.5) * 2; z = r * Math.sin(theta * 2);
+                }
+                arr.push(x, y, z);
+            }
+            return arr;
+        },
+        fireworks: () => {
+            const arr = [];
+            for(let i=0; i<particleCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                const r = Math.random() * 20;
+                arr.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+            }
+            return arr;
+        }
+    };
+
+    function morphTo(shapeName) {
+        state.currentShape = shapeName;
+        const newCoords = shapes[shapeName]();
+        for(let i=0; i<particleCount * 3; i++) {
+            targetPositions[i] = newCoords[i];
+        }
+    }
+    morphTo('heart');
+
+    // --- 6. MediaPipe & 摄像头逻辑 ---
+    const videoElement = document.getElementById('input-video');
+    const statusElement = document.getElementById('status');
+    const loader = document.getElementById('loader');
+
+    function getDistance(p1, p2) {
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    }
+
+    function onResults(results) {
+        loader.style.display = 'none';
+        
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            statusElement.innerText = "已捕获手势 | 张开双手以扩散粒子";
+            statusElement.classList.add('highlight');
+            const landmarks = results.multiHandLandmarks[0];
+            const thumbTip = landmarks[4];
+            const pinkyTip = landmarks[20];
+            
+            const rawDist = getDistance(thumbTip, pinkyTip);
+            let factor = (rawDist - 0.1) * 6;
+            if (factor < 0.5) factor = 0.5;
+            if (factor > 4.0) factor = 4.0;
+
+            state.spreadFactor += (factor - state.spreadFactor) * 0.1;
+        } else {
+            statusElement.innerText = "未检测到手势 (请将手置于摄像头前)";
+            statusElement.classList.remove('highlight');
+            state.spreadFactor += (1.0 - state.spreadFactor) * 0.05;
+        }
+    }
+
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: isMobile ? 0 : 1, 
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    hands.onResults(onResults);
+
+    const cameraUtils = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 640, height: 480 
+    });
+    cameraUtils.start();
+
+    // --- 7. 初始化 Lil-GUI ---
+    const gui = new lil.GUI({ container: document.getElementById('gui-container'), autoPlace: false });
+    gui.domElement.style.width = '100%';
+
+    const shapeFolder = gui.addFolder('模型选择 Shape');
+    const shapeOptions = { 
+        '爱心 Heart': 'heart', '花朵 Flower': 'flower', 
+        '土星 Saturn': 'saturn', '佛像 Buddha': 'buddha', '烟花 Fireworks': 'fireworks' 
+    };
+    shapeFolder.add({ current: 'heart' }, 'current', shapeOptions).name('类型').onChange(val => morphTo(val));
+
+    const styleFolder = gui.addFolder('样式外观 Style');
+    
+    // 颜色选择器：变化时调用 updateColors
+    styleFolder.addColor(state, 'baseColor').name('主题色').onChange(val => updateColors(val));
+    styleFolder.add(material, 'size', 0.1, 1.5).name('粒子大小');
+
+    // 全屏控制
+    const fsBtn = document.getElementById('fullscreen-btn');
+    fsBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            fsBtn.innerText = "退出全屏";
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            fsBtn.innerText = "全屏沉浸模式";
+        }
+    });
+
+    // --- 8. 渲染循环 ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        scene.rotation.y += 0.002;
+
+        const positionsAttr = geometry.attributes.position;
+        const currentPos = positionsAttr.array;
+
+        for (let i = 0; i < particleCount; i++) {
+            const idx = i * 3;
+            let tx = targetPositions[idx];
+            let ty = targetPositions[idx + 1];
+            let tz = targetPositions[idx + 2];
+
+            // 扩散逻辑
+            tx *= state.spreadFactor;
+            ty *= state.spreadFactor;
+            tz *= state.spreadFactor;
+
+            // 噪点
+            const noise = 0.05 * state.spreadFactor; 
+            tx += (Math.random() - 0.5) * noise;
+            ty += (Math.random() - 0.5) * noise;
+            tz += (Math.random() - 0.5) * noise;
+
+            // 运动插值
+            currentPos[idx] += (tx - currentPos[idx]) * 0.08;
+            currentPos[idx+1] += (ty - currentPos[idx+1]) * 0.08;
+            currentPos[idx+2] += (tz - currentPos[idx+2]) * 0.08;
+        }
+
+        positionsAttr.needsUpdate = true;
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+</script>
+</body>
+</html>
