@@ -2,483 +2,602 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AI手势控制粒子系统 (蓝色版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品买卖合同</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* --- 基础样式 --- */
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Helvetica, sans-serif; }
-        canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
-        #input-video { display: none; }
-        
-        /* --- 加载动画 --- */
-        #loader {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #00aaff; font-size: 1.2rem; text-align: center; pointer-events: none;
-            text-shadow: 0 0 10px #00aaff; z-index: 100; width: 80%;
+        body {
+            background-color: #f3f4f6;
+            font-family: "SimSun", "Songti SC", "Times New Roman", serif;
+            margin: 0;
+            padding: 0;
         }
-
-        /* --- UI 悬浮设置按钮 (常驻，隐藏面板时显示) --- */
-        #settings-toggle {
-            position: absolute; top: 20px; right: 20px;
-            width: 44px; height: 44px;
-            background: rgba(0, 170, 255, 0.2);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 170, 255, 0.4);
-            border-radius: 50%;
-            color: #fff; font-size: 20px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 50; /* 层级很高，保证可点 */
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.3);
-            
-            /* 默认隐藏，只有面板关闭时才显示 (通过JS控制透明度) */
-            opacity: 0; pointer-events: none; 
-        }
-        #settings-toggle:hover { background: rgba(0, 170, 255, 0.5); transform: rotate(90deg) scale(1.1); }
-
-        /* --- 控制面板容器 (弹性布局) --- */
-        #ui-panel {
-            position: absolute; 
-            background: rgba(8, 15, 25, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(0, 170, 255, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            z-index: 40;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            
-            /* 过渡动画 */
-            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
-            transform-origin: top right;
-        }
-
-        /* 隐藏状态 */
-        .panel-hidden {
-            transform: scale(0.9) translateY(-20px);
-            opacity: 0;
-            pointer-events: none;
-            visibility: hidden;
-        }
-
-        /* 面板头部 */
-        .panel-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .panel-title { color: #00aaff; font-weight: 600; font-size: 16px; letter-spacing: 1px; }
-        .close-btn {
-            background: none; border: none; color: rgba(255,255,255,0.6);
-            font-size: 24px; cursor: pointer; padding: 0 8px; border-radius: 4px;
-        }
-        .close-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
-
-        /* Lil-gui 容器调整 */
-        #gui-container { width: 100%; }
-        /* 覆盖 lil-gui 默认样式适配蓝色主题 */
-        .lil-gui { --background-color: transparent; --text-color: #eee; --width: 100%; --widget-color: #333; --hover-color: #444; --focus-color: #555; --number-color: #00aaff; --string-color: #00aaff; }
-        .lil-gui .title { color: #00aaff; }
-
-        /* 全屏按钮 */
-        .action-btn {
-            background: linear-gradient(90deg, #00aaff, #0077cc);
-            border: none; padding: 12px; color: white; border-radius: 8px;
-            cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px;
-            font-size: 14px; transition: 0.3s;
-            box-shadow: 0 4px 10px rgba(0, 170, 255, 0.3);
-        }
-        .action-btn:active { transform: scale(0.98); }
-
-        /* 状态指示文字 */
-        #status {
-            position: absolute; bottom: 30px; left: 0; width: 100%;
-            text-align: center;
-            color: rgba(255,255,255,0.6); font-size: 14px;
-            pointer-events: none; text-shadow: 0 1px 2px #000;
-        }
-        .highlight { color: #00ff00 !important; font-weight: bold; }
-
-        /* ================= 响应式布局适配 ================= */
-        
-        /* 1. 桌面端 (Desktop) */
-        @media (min-width: 1024px) {
-            #ui-panel { top: 60px; right: 20px; width: 280px; }
+        .a4-paper {
+            width: 210mm;
+            min-height: 280mm; 
+            margin: 20px auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 12mm 15mm; 
+            box-sizing: border-box;
+            position: relative;
         }
         
-        /* 平板适配 */
-        @media (min-width: 769px) {
-            #ui-panel { top: 60px; right: 25px; width: 280px; }
+        /* 强制所有表格线宽为 0.5pt (极其正规的打印线宽) */
+        .box-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .box-table, .box-table th, .box-table td {
+            border: 0.5pt solid #000000 !important;
         }
 
-        /* 2. 平板/手机端 (Tablet & Mobile) */
-        @media (max-width: 768px) {
-            #settings-toggle { top: 15px; right: 15px; }
-            
-            #ui-panel {
-                /* 移动端底部弹窗 */
-                top: auto; bottom: 20px; left: 20px; right: 20px;
-                width: auto; 
-                transform-origin: bottom center;
-            }
-
-            .panel-hidden {
-                transform: translateY(20px) scale(0.95);
-            }
-            
-            #loader { font-size: 1rem; width: 90%; }
+        input, textarea {
+            background-color: transparent;
+            color: #000;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print, .sign-tip { display: none !important; }
+            input::placeholder, textarea::placeholder { color: transparent !important; }
+            .a4-paper { box-shadow: none; margin: 0; width: 100%; min-height: 100%; padding: 10mm; }
+            @page { size: A4 portrait; margin: 0; }
         }
     </style>
-    
-    <!-- 引入库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.17.0/dist/lil-gui.umd.min.js"></script>
 </head>
-<body>
+<body class="text-gray-900">
 
-    <!-- 1. 加载提示 -->
-    <div id="loader">
-        <div>正在启动 AI 内核...</div>
-        <div style="font-size:12px; color:#aaa; margin-top:5px;">请允许摄像头权限以进行交互</div>
-    </div>
-    
-    <video id="input-video" playsinline></video>
-    
-    <div id="status">等待手势...</div>
-
-    <!-- 4. 设置按钮 (齿轮 - 点击此处打开面板) -->
-    <div id="settings-toggle" title="打开设置">⚙️</div>
-
-    <!-- 5. 控制面板 (可折叠) -->
-    <div id="ui-panel">
-        <div class="panel-header">
-            <span class="panel-title">粒子控制器</span>
-            <button class="close-btn" id="ui-close" title="收起面板">×</button>
+    <!-- 顶部操作栏 -->
+    <div class="no-print flex flex-wrap justify-center gap-3 py-3 bg-gray-800 sticky top-0 z-40 shadow-md w-full px-4">
+        <div class="flex bg-gray-700 rounded overflow-hidden shadow-sm">
+            <button onclick="switchCompany('sanheyi')" class="px-4 py-2 bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition border-r border-indigo-800">
+                三合一 (专票)
+            </button>
+            <button onclick="switchCompany('huixinfa')" class="px-4 py-2 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition">
+                惠新发 (普票)
+            </button>
         </div>
-        
-        <div id="gui-container"></div>
-        
-        <button class="action-btn" id="fullscreen-btn">全屏沉浸模式</button>
+        <button onclick="openParseModal()" class="px-4 py-2 bg-fuchsia-600 text-white text-sm font-bold rounded hover:bg-fuchsia-700 transition shadow-sm flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            识别乙方信息
+        </button>
+        <button onclick="window.print()" class="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 transition shadow-sm ml-auto">
+            直接打印
+        </button>
+        <button onclick="downloadPDF()" id="pdf-btn" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition shadow-sm">
+            下载 PDF
+        </button>
     </div>
 
-<script>
-    // --- 1. UI 交互逻辑 (控制面板显隐) ---
-    const uiPanel = document.getElementById('ui-panel');
-    const settingsBtn = document.getElementById('settings-toggle');
-    const closeBtn = document.getElementById('ui-close');
-    
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // 面板切换函数
-    function togglePanel(show) {
-        if (show) {
-            // 打开面板：移除隐藏类，隐藏齿轮
-            uiPanel.classList.remove('panel-hidden');
-            settingsBtn.style.opacity = '0'; 
-            settingsBtn.style.pointerEvents = 'none';
-        } else {
-            // 关闭面板：添加隐藏类，显示齿轮
-            uiPanel.classList.add('panel-hidden');
-            settingsBtn.style.opacity = '1'; 
-            settingsBtn.style.pointerEvents = 'auto';
-        }
-    }
-
-    // 绑定事件：点击齿轮打开，点击关闭按钮关闭
-    settingsBtn.addEventListener('click', () => togglePanel(true));
-    closeBtn.addEventListener('click', () => togglePanel(false));
-
-    // 默认状态：移动端收起，电脑端展开
-    if (isMobile) {
-        togglePanel(false); // 手机默认隐藏，只显示齿轮
-    } else {
-        togglePanel(true);  // PC默认展开
-    }
-
-    // --- 2. Three.js 场景初始化 ---
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.002);
-
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = isMobile ? 40 : 30; 
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
-    document.body.appendChild(renderer.domElement);
-
-    // --- 3. 粒子系统逻辑 ---
-    const particleCount = isMobile ? 8000 : 18000;
-    
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const targetPositions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    
-    // 初始化位置
-    for (let i = 0; i < particleCount * 3; i++) {
-        positions[i] = (Math.random() - 0.5) * 100;
-        targetPositions[i] = positions[i];
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const material = new THREE.PointsMaterial({
-        size: isMobile ? 0.3 : 0.2,
-        vertexColors: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        transparent: true,
-        opacity: 0.8
-    });
-
-    const particles = new THREE.Points(geometry, material);
-    scene.add(particles);
-
-    // --- 4. 状态管理与颜色初始化 ---
-    const state = {
-        currentShape: 'heart',
-        baseColor: '#00aaff', // 默认设为蓝色
-        spreadFactor: 1.0 
-    };
-
-    // 辅助函数：更新所有粒子颜色
-    function updateColors(hexColor) {
-        const color = new THREE.Color(hexColor);
-        const colorsAttr = geometry.attributes.color;
-        for(let i=0; i<particleCount; i++) {
-            // 增加一点亮度随机变化，让粒子更有质感
-            const shade = 0.5 + Math.random() * 0.7; 
-            colorsAttr.setXYZ(i, color.r * shade, color.g * shade, color.b * shade);
-        }
-        colorsAttr.needsUpdate = true;
-    }
-
-    // *** 关键：启动时立即应用蓝色 ***
-    updateColors(state.baseColor);
-
-    // --- 5. 形状生成算法 ---
-    const shapes = {
-        heart: () => {
-            const arr = [];
-            for(let i=0; i<particleCount; i++) {
-                let t = Math.random() * Math.PI * 2;
-                let u = Math.random() + Math.random();
-                let r = (u > 1 ? 2 - u : u) * 10; 
-                let x = 16 * Math.pow(Math.sin(t), 3);
-                let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-                let z = (Math.random() - 0.5) * 5; 
-                x *= 0.8; y *= 0.8;
-                let scale = Math.random(); 
-                arr.push(x * scale, y * scale, z * scale);
-            }
-            return arr;
-        },
-        saturn: () => {
-            const arr = [];
-            for(let i=0; i<particleCount; i++) {
-                if(i < particleCount * 0.7) {
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.acos((Math.random() * 2) - 1);
-                    const r = 8;
-                    arr.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-                } else {
-                    const angle = Math.random() * Math.PI * 2;
-                    const r = 12 + Math.random() * 6;
-                    arr.push(r * Math.cos(angle), (Math.random()-0.5) * 0.5, r * Math.sin(angle));
-                }
-            }
-            const euler = new THREE.Euler(0.4, 0, 0.4);
-            const vec = new THREE.Vector3();
-            for(let i=0; i<arr.length; i+=3){
-                vec.set(arr[i], arr[i+1], arr[i+2]);
-                vec.applyEuler(euler);
-                arr[i] = vec.x; arr[i+1] = vec.y; arr[i+2] = vec.z;
-            }
-            return arr;
-        },
-        flower: () => {
-            const arr = [];
-            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-            for(let i=0; i<particleCount; i++) {
-                const r = Math.sqrt(i) * 0.2;
-                const theta = i * goldenAngle;
-                const y = Math.sin(r * 0.5) * 5 - 5; 
-                arr.push(r * Math.cos(theta), y, r * Math.sin(theta));
-            }
-            return arr;
-        },
-        buddha: () => {
-            const arr = [];
-            for(let i=0; i<particleCount; i++) {
-                let x, y, z;
-                const rand = Math.random();
-                if (rand < 0.25) {
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.acos(2 * Math.random() - 1);
-                    const r = 3;
-                    x = r * Math.sin(phi) * Math.cos(theta); y = r * Math.sin(phi) * Math.sin(theta) + 8; z = r * Math.cos(phi);
-                } else if (rand < 0.65) {
-                    const theta = Math.random() * Math.PI * 2;
-                    const h = (Math.random() - 0.5) * 10; 
-                    const r = 6 * (1 - Math.abs(h)/12); 
-                    x = r * Math.cos(theta); y = h; z = r * Math.sin(theta);
-                } else {
-                    const theta = Math.random() * Math.PI; 
-                    const r = 8 + Math.random() * 4;
-                    x = r * Math.cos(theta * 2); y = -6 + (Math.random()-0.5) * 2; z = r * Math.sin(theta * 2);
-                }
-                arr.push(x, y, z);
-            }
-            return arr;
-        },
-        fireworks: () => {
-            const arr = [];
-            for(let i=0; i<particleCount; i++) {
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos((Math.random() * 2) - 1);
-                const r = Math.random() * 20;
-                arr.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-            }
-            return arr;
-        }
-    };
-
-    function morphTo(shapeName) {
-        state.currentShape = shapeName;
-        const newCoords = shapes[shapeName]();
-        for(let i=0; i<particleCount * 3; i++) {
-            targetPositions[i] = newCoords[i];
-        }
-    }
-    morphTo('heart');
-
-    // --- 6. MediaPipe & 摄像头逻辑 ---
-    const videoElement = document.getElementById('input-video');
-    const statusElement = document.getElementById('status');
-    const loader = document.getElementById('loader');
-
-    function getDistance(p1, p2) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-    }
-
-    function onResults(results) {
-        loader.style.display = 'none';
+    <!-- 合同主体 -->
+    <div id="contract-content" class="a4-paper flex flex-col bg-white">
         
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            statusElement.innerText = "已捕获手势 | 张开双手以扩散粒子";
-            statusElement.classList.add('highlight');
-            const landmarks = results.multiHandLandmarks[0];
-            const thumbTip = landmarks[4];
-            const pinkyTip = landmarks[20];
+        <h1 class="text-2xl font-bold text-center tracking-[0.5em] mb-3">产品买卖合同</h1>
+
+        <!-- 抬头信息 -->
+        <div class="flex justify-between text-[13px] mb-2 leading-tight">
+            <div class="flex flex-col gap-1 w-1/2">
+                <p class="flex items-end">
+                    <span class="w-12">甲方：</span>
+                    <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5">深圳市三合一五金有限公司</span>
+                </p>
+                <p class="flex items-end">
+                    <span class="w-12">乙方：</span>
+                    <input type="text" id="top-partyB-name" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold" placeholder="请填写或识别乙方">
+                </p>
+            </div>
+            <div class="flex flex-col gap-1 w-[40%]">
+                <p class="flex items-end">
+                    <span class="w-20 text-right">签订地点：</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5">深圳市龙岗区万达科技园</span>
+                </p>
+                <p class="flex items-end">
+                    <span class="w-20 text-right">签订时间：</span>
+                    <input type="text" id="sign-date" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
+                </p>
+                <p class="flex items-end">
+                    <span class="w-20 text-right">合同编号：</span>
+                    <input type="text" id="contract-no" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
+                </p>
+            </div>
+        </div>
+
+        <!-- 购销表格 -->
+        <table class="box-table text-[12px] text-center mb-2">
+            <thead>
+                <tr class="bg-gray-50 font-bold">
+                    <th class="p-1.5">名 称</th>
+                    <th class="p-1.5 w-12">单位</th>
+                    <th class="p-1.5 w-16">数量</th>
+                    <th class="p-1.5 w-20">含税单价</th>
+                    <th class="p-1.5 w-24">含税合计</th>
+                    <th class="p-1.5 w-20">交付周期</th>
+                    <th class="p-1.5 w-24">备 注</th>
+                </tr>
+            </thead>
+            <tbody id="product-tbody">
+                <!-- 初始三行 -->
+                <tr class="h-6 calc-row group relative">
+                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0 relative">
+                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="h-6 calc-row group relative">
+                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0 relative">
+                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="h-6 calc-row group relative">
+                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0 relative">
+                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+            <tbody>
+                <!-- 合计行 -->
+                <tr>
+                    <td colspan="7" class="p-1.5 text-left font-bold relative">
+                        人民币金额（大写）：<input type="text" id="grand-total" class="w-72 border-b border-dotted border-gray-600 focus:outline-none px-1 text-blue-800" placeholder="填写上方数量单价自动计算" readonly tabindex="-1">
+                        <span id="tax-term-text">（含13%增值税）及运费</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 条款 -->
+        <div class="text-[11.5px] leading-[1.3] text-justify flex-1 flex flex-col justify-between mb-1">
+            <p>第一条、质量要求技术标准：按国家标准，生产厂家有关标准执行，符合需方订单要求及技术要求。</p>
+            <p>第二条、乙方对质量负责的条件及期限：质保期 5年。</p>
+            <p>第三条、包装标准、包装物的供应与回收：包装物不回收。</p>
+            <p>第四条、随机的必备品、配件、工具数量及供应办法：符合本合同第二条规定。</p>
+            <p>第五条、合理损耗及计算方法：无。</p>
+            <p>第六条、标的物自验收合格时起交付。</p>
+            <p>第七条、交货地点、方式：需方指定地点，汽车运输。</p>
+            <p>第八条、运输及到达站（港）和费用负担：供方负责运输。</p>
+            <p>第九条、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
+            <p>第十条、设备的安装与调试：无。</p>
+            <p>第十一条、结算方式、时间及地点：<input type="text" class="w-10 border-b border-black text-center focus:outline-none text-[12px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
+            <p>第十二条、违约责任：其他按合同法执行。</p>
+            <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
+            <p>第十四条、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
+            <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
+            <p>第十六条、产品名称、金额、供货时间及数量。</p>
+        </div>
+
+        <!-- 签章区 -->
+        <table class="box-table text-[11.5px]">
+            <tbody>
+                <tr class="align-top">
+                    <!-- 甲方 -->
+                    <td class="w-1/2 px-2 py-1.5 relative">
+                        <div class="flex flex-col gap-1.5">
+                            <p class="font-bold mb-0.5">甲方：</p>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">单位名称（章）：</span>
+                                <input type="text" id="partyA_name" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
+                                <textarea id="partyA_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
+                            </div>
+                            <div class="flex items-end h-9 group cursor-pointer" onclick="openSignatureModal()">
+                                <span class="w-[6.5rem] mb-1">法定/委托代理人：</span>
+                                <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-center hover:bg-yellow-50 transition">
+                                    <span id="sign-tip" class="sign-tip text-blue-500 text-[10px] mb-1 font-bold group-hover:scale-105 transition">点击此处签名</span>
+                                    <img id="signature-result" src="" class="absolute bottom-0 left-4 h-10 w-auto hidden drop-shadow-md" alt="签名">
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">电话：</span>
+                                <input type="text" id="partyA_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">开户行：</span>
+                                <input type="text" id="partyA_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">账号：</span>
+                                <input type="text" id="partyA_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">纳税号：</span>
+                                <input type="text" id="partyA_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <!-- 乙方 -->
+                    <td class="w-1/2 px-2 py-1.5">
+                        <div class="flex flex-col gap-1.5">
+                            <p class="font-bold mb-0.5">乙方：</p>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">单位名称（章）：</span>
+                                <input type="text" id="partyB_name" oninput="document.getElementById('top-partyB-name').value=this.value" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
+                                <textarea id="partyB_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
+                            </div>
+                            <div class="flex items-center h-9">
+                                <span class="w-[6.5rem]">法定/委托代理人：</span>
+                                <input type="text" id="partyB_agent" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">电话：</span>
+                                <input type="text" id="partyB_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">开户行：</span>
+                                <input type="text" id="partyB_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">账号：</span>
+                                <input type="text" id="partyB_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-[6.5rem]">纳税号：</span>
+                                <input type="text" id="partyB_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 弹窗部分省略多余文字，保持代码结构 -->
+    <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col">
+            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="text-base font-bold text-gray-800">智能识别乙方信息</h3>
+                <button onclick="closeParseModal()" class="text-gray-400 hover:text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-4">
+                <textarea id="parse-textarea" rows="6" class="w-full border border-gray-300 rounded p-3 text-sm focus:outline-none focus:border-fuchsia-500" placeholder="请粘贴客户资料..."></textarea>
+            </div>
+            <div class="px-4 py-3 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+                <button onclick="closeParseModal()" class="px-4 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-sm">取消</button>
+                <button onclick="executeParse()" class="px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-sm font-bold shadow-md">一键识别</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="signature-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-2xl flex flex-col">
+            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="text-lg font-bold text-gray-800">请手写签名</h3>
+                <button onclick="closeSignatureModal()" class="text-gray-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-5">
+                <div class="border-2 border-dashed border-gray-300 bg-yellow-50/30 rounded-lg relative h-64 w-full cursor-crosshair">
+                    <canvas id="modal-canvas" class="absolute inset-0 z-10 w-full h-full touch-none"></canvas>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t flex justify-between bg-gray-50 rounded-b-xl">
+                <button onclick="clearCanvas()" class="px-5 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 font-medium">清除重写</button>
+                <div class="flex gap-3">
+                    <button onclick="closeSignatureModal()" class="px-5 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 font-medium">取消</button>
+                    <button onclick="confirmSignature()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md">确定签名</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function adjustTextareaHeight(el) {
+            el.style.height = '18px'; 
+            el.style.height = el.scrollHeight + 'px'; 
+        }
+
+        const companyData = {
+            sanheyi: {
+                name: '深圳市三合一五金有限公司',
+                tax: '91440300306115994W',
+                bank: '中国工商银行深圳双龙支行',
+                account: '4000020609201024351',
+                address: '深圳市龙岗区宝龙街道南约社区高科大道56号万达工业园1号厂房301G',
+                phone: '0755-28262135',
+                taxText: '（含13%增值税）及运费'
+            },
+            huixinfa: {
+                name: '深圳市龙岗区惠新发五金钢材商行',
+                tax: '92440300L375629906',
+                bank: '深圳农村商业银行南约支行',
+                account: '000106704608',
+                address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
+                phone: '0755-28262135',
+                taxText: '含普通发票及运费'
+            }
+        };
+
+        function switchCompany(type) {
+            const data = companyData[type];
+            document.getElementById('top-partyA-name').innerText = data.name;
+            document.getElementById('partyA_name').value = data.name;
+            document.getElementById('partyA_tax').value = data.tax;
+            document.getElementById('partyA_bank').value = data.bank;
+            document.getElementById('partyA_account').value = data.account;
             
-            const rawDist = getDistance(thumbTip, pinkyTip);
-            let factor = (rawDist - 0.1) * 6;
-            if (factor < 0.5) factor = 0.5;
-            if (factor > 4.0) factor = 4.0;
-
-            state.spreadFactor += (factor - state.spreadFactor) * 0.1;
-        } else {
-            statusElement.innerText = "未检测到手势 (请将手置于摄像头前)";
-            statusElement.classList.remove('highlight');
-            state.spreadFactor += (1.0 - state.spreadFactor) * 0.05;
-        }
-    }
-
-    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-    hands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: isMobile ? 0 : 1, 
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-    });
-    hands.onResults(onResults);
-
-    const cameraUtils = new Camera(videoElement, {
-        onFrame: async () => { await hands.send({image: videoElement}); },
-        width: 640, height: 480 
-    });
-    cameraUtils.start();
-
-    // --- 7. 初始化 Lil-GUI ---
-    const gui = new lil.GUI({ container: document.getElementById('gui-container'), autoPlace: false });
-    gui.domElement.style.width = '100%';
-
-    const shapeFolder = gui.addFolder('模型选择 Shape');
-    const shapeOptions = { 
-        '爱心 Heart': 'heart', '花朵 Flower': 'flower', 
-        '土星 Saturn': 'saturn', '佛像 Buddha': 'buddha', '烟花 Fireworks': 'fireworks' 
-    };
-    shapeFolder.add({ current: 'heart' }, 'current', shapeOptions).name('类型').onChange(val => morphTo(val));
-
-    const styleFolder = gui.addFolder('样式外观 Style');
-    
-    // 颜色选择器：变化时调用 updateColors
-    styleFolder.addColor(state, 'baseColor').name('主题色').onChange(val => updateColors(val));
-    styleFolder.add(material, 'size', 0.1, 1.5).name('粒子大小');
-
-    // 全屏控制
-    const fsBtn = document.getElementById('fullscreen-btn');
-    fsBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            fsBtn.innerText = "退出全屏";
-        } else {
-            if (document.exitFullscreen) document.exitFullscreen();
-            fsBtn.innerText = "全屏沉浸模式";
-        }
-    });
-
-    // --- 8. 渲染循环 ---
-    const clock = new THREE.Clock();
-
-    function animate() {
-        requestAnimationFrame(animate);
-        scene.rotation.y += 0.002;
-
-        const positionsAttr = geometry.attributes.position;
-        const currentPos = positionsAttr.array;
-
-        for (let i = 0; i < particleCount; i++) {
-            const idx = i * 3;
-            let tx = targetPositions[idx];
-            let ty = targetPositions[idx + 1];
-            let tz = targetPositions[idx + 2];
-
-            // 扩散逻辑
-            tx *= state.spreadFactor;
-            ty *= state.spreadFactor;
-            tz *= state.spreadFactor;
-
-            // 噪点
-            const noise = 0.05 * state.spreadFactor; 
-            tx += (Math.random() - 0.5) * noise;
-            ty += (Math.random() - 0.5) * noise;
-            tz += (Math.random() - 0.5) * noise;
-
-            // 运动插值
-            currentPos[idx] += (tx - currentPos[idx]) * 0.08;
-            currentPos[idx+1] += (ty - currentPos[idx+1]) * 0.08;
-            currentPos[idx+2] += (tz - currentPos[idx+2]) * 0.08;
+            const addrEl = document.getElementById('partyA_address');
+            addrEl.value = data.address;
+            setTimeout(() => adjustTextareaHeight(addrEl), 0);
+            
+            document.getElementById('partyA_phone').value = data.phone;
+            document.getElementById('tax-term-text').innerText = data.taxText;
         }
 
-        positionsAttr.needsUpdate = true;
-        renderer.render(scene, camera);
-    }
+        window.onload = function() {
+            switchCompany('sanheyi'); 
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
 
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+            document.getElementById('sign-date').value = `${year}年${month}月${day}日`;
+            document.getElementById('contract-no').value = `${year}${month}${day}${hour}${minute}`;
+        };
 
-    animate();
-</script>
+        function openParseModal() { document.getElementById('parse-modal').classList.remove('hidden'); document.getElementById('parse-modal').classList.add('flex'); }
+        function closeParseModal() { document.getElementById('parse-modal').classList.add('hidden'); document.getElementById('parse-modal').classList.remove('flex'); }
+        
+        function executeParse() {
+            const text = document.getElementById('parse-textarea').value;
+            if(!text) return closeParseModal();
+            const nameMatch = text.match(/(?:公司名称|名称|全称)[:：\s]*([^\n]+)/) || text.match(/^([^\n]+公司)/);
+            const taxMatch = text.match(/(?:纳税人识别号|税号|统一社会信用代码)[:：\s]*([a-zA-Z0-9]{15,18})/);
+            const bankMatch = text.match(/(?:开户行|行号|银行|开户银行)[:：\s]*([^\n]+)/);
+            const accountMatch = text.match(/(?:账号|帐号)[:：\s]*([\d\s\-]{8,})/);
+            const addressMatch = text.match(/(?:地址|厂址|公司地址)[:：\s]*([^\n]+)/);
+            const phoneMatch = text.match(/(?:电话|联系电话|公司电话|手机)[:：\s]*([0-9\-\s]{7,})/);
+            const agentMatch = text.match(/(?:法定代表人|代表人|委托代理人|联系人)[:：\s]*([^\n\s]+)/);
+
+            if(nameMatch) { document.getElementById('partyB_name').value = nameMatch[1].trim(); document.getElementById('top-partyB-name').value = nameMatch[1].trim(); }
+            if(taxMatch) document.getElementById('partyB_tax').value = taxMatch[1].trim();
+            if(bankMatch) document.getElementById('partyB_bank').value = bankMatch[1].trim();
+            if(accountMatch) document.getElementById('partyB_account').value = accountMatch[1].replace(/\s/g,'').trim();
+            if(addressMatch) {
+                const bAddrEl = document.getElementById('partyB_address');
+                bAddrEl.value = addressMatch[1].trim();
+                adjustTextareaHeight(bAddrEl);
+            }
+            if(phoneMatch) document.getElementById('partyB_phone').value = phoneMatch[1].trim();
+            if(agentMatch) document.getElementById('partyB_agent').value = agentMatch[1].trim();
+            closeParseModal();
+        }
+
+        // ================= 全新：极其智能的“以下空白”探测系统 =================
+        function checkBlankRows() {
+            const rows = Array.from(document.querySelectorAll('.calc-row'));
+            let lastContentIndex = -1;
+
+            // 1. 找到所有带真实内容，或当前鼠标正在输入的行
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input:not(.row-total)');
+                let hasContent = false;
+                inputs.forEach(input => {
+                    // 如果仅仅是系统写的“以下空白”，不算做有内容
+                    if (input.classList.contains('name-input') && input.value === '以下空白') return; 
+                    if (input.value.trim() !== '') hasContent = true;
+                });
+                
+                // 重点：如果用户光标在这一行，这一行就被视为“工作区末端”
+                let isFocused = row.contains(document.activeElement);
+
+                if (hasContent || isFocused) {
+                    lastContentIndex = index;
+                }
+            });
+
+            // 如果用户写到了表格的最后一行，系统自动增加一行空行，用来放“以下空白”！
+            if (lastContentIndex === rows.length - 1) {
+                const tbody = document.getElementById('product-tbody');
+                const newTr = document.createElement('tr');
+                newTr.className = 'h-6 calc-row group relative';
+                newTr.innerHTML = `
+                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                    <td class="p-0 relative">
+                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(newTr);
+                setTimeout(checkBlankRows, 10); // 递归调用给新行打上“以下空白”
+                return; 
+            }
+
+            // 2. 只有在最后一行的【正下方】才写入“以下空白”，并且清理掉其他位置瞎跑的“以下空白”
+            rows.forEach((row, index) => {
+                const nameInput = row.querySelector('.name-input');
+                if (lastContentIndex >= 0 && index === lastContentIndex + 1) {
+                    if (nameInput.value === '') nameInput.value = '以下空白';
+                } else {
+                    if (nameInput.value === '以下空白') nameInput.value = '';
+                }
+            });
+        }
+
+        // 全局绑定表格的输入、进入、离开事件
+        const tbody = document.getElementById('product-tbody');
+        tbody.addEventListener('input', checkBlankRows);
+        tbody.addEventListener('focusin', checkBlankRows);
+        tbody.addEventListener('focusout', () => setTimeout(checkBlankRows, 10));
+
+
+        // ================= 修复：从当前行的“正下方”插入新行 =================
+        function addRow(btn) {
+            const tr = btn.closest('tr');
+            const newTr = document.createElement('tr');
+            newTr.className = 'h-6 calc-row group relative';
+            newTr.innerHTML = `
+                <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
+                <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                <td class="p-0 relative">
+                    <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                    <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                        <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                        <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                    </div>
+                </td>
+            `;
+            tr.after(newTr); // 物理插入到这行之后
+            
+            // 重点：自动把光标聚焦到新出来的这一行上
+            const firstInput = newTr.querySelector('.name-input');
+            if (firstInput) firstInput.focus();
+            
+            checkBlankRows();
+        }
+
+        // ================= 修复：精准删除当前行 =================
+        function removeRow(btn) {
+            if(document.querySelectorAll('.calc-row').length <= 1) {
+                alert("至少保留一行明细！"); return;
+            }
+            btn.closest('tr').remove(); // 物理删除点中的这行
+            calcTotal();
+            checkBlankRows(); // 重新整理“以下空白”
+        }
+
+        function calcTotal() {
+            let grandTotal = 0;
+            document.querySelectorAll('.calc-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const totalInput = row.querySelector('.row-total');
+                const rowTotal = qty * price;
+                if(rowTotal > 0) { totalInput.value = rowTotal.toFixed(2); grandTotal += rowTotal; } 
+                else { totalInput.value = ''; }
+            });
+            const grandTotalInput = document.getElementById('grand-total');
+            grandTotalInput.value = grandTotal > 0 ? amountToChinese(grandTotal) + ` (¥${grandTotal.toFixed(2)})` : '';
+        }
+
+        function amountToChinese(n) {
+            const fraction =['角', '分'];
+            const digit =['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+            const unit = [['元', '万', '亿'],['', '拾', '佰', '仟']];
+            const head = n < 0 ? '欠' : '';
+            n = Math.abs(n); let s = '';
+            for (let i = 0; i < fraction.length; i++) s += (digit[Math.floor(n * 10 * Math.pow(10, i)) % 10] + fraction[i]).replace(/零./, '');
+            s = s || '整'; n = Math.floor(n);
+            for (let i = 0; i < unit[0].length && n > 0; i++) {
+                let p = '';
+                for (let j = 0; j < unit[1].length && n > 0; j++) { p = digit[n % 10] + unit[1][j] + p; n = Math.floor(n / 10); }
+                s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + unit[0][i] + s;
+            }
+            return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
+        }
+
+        // ================= 手写签名与导出PDF =================
+        const modal = document.getElementById('signature-modal');
+        const canvas = document.getElementById('modal-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false, hasDrawn = false;
+
+        function initCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width; canvas.height = rect.height;
+            ctx.strokeStyle = '#000000'; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        }
+        function openSignatureModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(initCanvas, 50); }
+        function closeSignatureModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; hasDrawn = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); });
+        canvas.addEventListener('mousemove', (e) => { if (isDrawing) { ctx.lineTo(getPos(e).x, getPos(e).y); ctx.stroke(); } });
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDrawing = true; hasDrawn = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (isDrawing) { ctx.lineTo(getPos(e).x, getPos(e).y); ctx.stroke(); } });
+        window.addEventListener('touchend', () => isDrawing = false);
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasDrawn = false; }
+        
+        function confirmSignature() {
+            if (!hasDrawn) return alert("请签名！");
+            document.getElementById('sign-tip').classList.add('hidden');
+            const resultImg = document.getElementById('signature-result');
+            resultImg.src = canvas.toDataURL("image/png"); resultImg.classList.remove('hidden');
+            closeSignatureModal();
+        }
+
+        function downloadPDF() {
+            window.scrollTo(0, 0); 
+            const element = document.getElementById('contract-content');
+            
+            const inputs = element.querySelectorAll('input');
+            const textareas = element.querySelectorAll('textarea');
+            inputs.forEach(input => { input.setAttribute('data-placeholder', input.placeholder || ''); input.placeholder = ''; input.setAttribute('value', input.value); });
+            textareas.forEach(textarea => { textarea.setAttribute('data-placeholder', textarea.placeholder || ''); textarea.placeholder = ''; textarea.textContent = textarea.value; });
+            document.querySelectorAll('.sign-tip').forEach(el => el.style.display = 'none');
+
+            const btn = document.getElementById('pdf-btn');
+            const originalText = btn.innerHTML; btn.innerHTML = '正在生成...';
+
+            html2pdf().set({
+                margin: 0, 
+                filename: `购销合同_${document.getElementById('top-partyA-name').innerText.substring(0,4)}_${document.getElementById('contract-no').value}.pdf`,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+                inputs.forEach(input => { input.placeholder = input.getAttribute('data-placeholder'); });
+                textareas.forEach(textarea => { textarea.placeholder = textarea.getAttribute('data-placeholder'); });
+                document.querySelectorAll('.sign-tip').forEach(el => el.style.display = '');
+            });
+        }
+    </script>
 </body>
 </html>
