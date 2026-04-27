@@ -572,6 +572,7 @@
             closeSignatureModal();
         }
 
+       // ================= 核心修改：精准控制导出的 PDF 文件名 =================
         function downloadPDF() {
             window.scrollTo(0, 0); 
             const element = document.getElementById('contract-content');
@@ -585,9 +586,14 @@
             const btn = document.getElementById('pdf-btn');
             const originalText = btn.innerHTML; btn.innerHTML = '正在生成...';
 
+            // 提取甲方公司名称和合同编号，拼接文件名
+            const partyAName = document.getElementById('top-partyA-name').innerText;
+            const contractNo = document.getElementById('contract-no').value;
+
             html2pdf().set({
                 margin: 0, 
-                filename: `购销合同_${document.getElementById('top-partyA-name').innerText.substring(0,4)}_${document.getElementById('contract-no').value}.pdf`,
+                // 格式为：甲方公司名称_合同编号_购销合同.pdf
+                filename: `${partyAName}_${contractNo}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
