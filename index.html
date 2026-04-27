@@ -40,10 +40,16 @@
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
+
+        /* 印章和签名的逼真混合模式（过滤掉白底，像真墨水一样融合） */
+        .realistic-stamp {
+            mix-blend-mode: multiply;
+            pointer-events: none;
+        }
         
         @media print {
             body { background: white; margin: 0; padding: 0; }
-            .no-print, .sign-tip { display: none !important; }
+            .no-print { display: none !important; }
             input::placeholder, textarea::placeholder { color: transparent !important; }
             .a4-paper { box-shadow: none; margin: 0; width: 100%; min-height: 100%; padding: 10mm; }
             @page { size: A4 portrait; margin: 0; }
@@ -203,9 +209,13 @@
         <table class="box-table text-[11.5px]">
             <tbody>
                 <tr class="align-top">
-                    <!-- 甲方 -->
-                    <td class="w-1/2 px-2 py-1.5 relative">
-                        <div class="flex flex-col gap-1.5">
+                    <!-- 甲方区域 (带自动图章和签名) -->
+                    <td class="w-1/2 px-2 py-1.5 relative overflow-hidden">
+                        
+                        <!-- ！！！电子公章 (仅三合一显示，绝对居中靠右，逼真混合模式) ！！！ -->
+                        <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-2 w-[160px] h-[160px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
+
+                        <div class="flex flex-col gap-1.5 relative z-0">
                             <p class="font-bold mb-0.5">甲方：</p>
                             <div class="flex items-center">
                                 <span class="w-[6.5rem]">单位名称（章）：</span>
@@ -215,11 +225,11 @@
                                 <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
                                 <textarea id="partyA_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
                             </div>
-                            <div class="flex items-end h-9 group cursor-pointer" onclick="openSignatureModal()">
+                            <div class="flex items-end h-9">
                                 <span class="w-[6.5rem] mb-1">法定/委托代理人：</span>
-                                <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-center hover:bg-yellow-50 transition">
-                                    <span id="sign-tip" class="sign-tip text-blue-500 text-[10px] mb-1 font-bold group-hover:scale-105 transition">点击此处签名</span>
-                                    <img id="signature-result" src="" class="absolute bottom-0 left-4 h-10 w-auto hidden drop-shadow-md" alt="签名">
+                                <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
+                                    <!-- ！！！电子签名 (绝对定位在横线上方，逼真混合模式) ！！！ -->
+                                    <img id="partyA_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-10 w-auto z-20" alt="签名" onerror="this.style.display='none'">
                                 </div>
                             </div>
                             <div class="flex items-center">
@@ -280,7 +290,7 @@
         </table>
     </div>
 
-    <!-- 弹窗部分省略多余文字，保持代码结构 -->
+    <!-- 弹窗：智能识别乙方 -->
     <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
         <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col">
             <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -293,27 +303,6 @@
             <div class="px-4 py-3 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
                 <button onclick="closeParseModal()" class="px-4 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-sm">取消</button>
                 <button onclick="executeParse()" class="px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-sm font-bold shadow-md">一键识别</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="signature-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-2xl flex flex-col">
-            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="text-lg font-bold text-gray-800">请手写签名</h3>
-                <button onclick="closeSignatureModal()" class="text-gray-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
-            <div class="p-5">
-                <div class="border-2 border-dashed border-gray-300 bg-yellow-50/30 rounded-lg relative h-64 w-full cursor-crosshair">
-                    <canvas id="modal-canvas" class="absolute inset-0 z-10 w-full h-full touch-none"></canvas>
-                </div>
-            </div>
-            <div class="px-5 py-4 border-t flex justify-between bg-gray-50 rounded-b-xl">
-                <button onclick="clearCanvas()" class="px-5 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 font-medium">清除重写</button>
-                <div class="flex gap-3">
-                    <button onclick="closeSignatureModal()" class="px-5 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 font-medium">取消</button>
-                    <button onclick="confirmSignature()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md">确定签名</button>
-                </div>
             </div>
         </div>
     </div>
@@ -332,16 +321,18 @@
                 account: '4000020609201024351',
                 address: '深圳市龙岗区宝龙街道南约社区高科大道56号万达工业园1号厂房301G',
                 phone: '0755-28262135',
-                taxText: '（含13%增值税）及运费'
+                taxText: '（含13%增值税）及运费',
+                showSeal: true // 三合一显示印章
             },
             huixinfa: {
                 name: '深圳市龙岗区惠新发五金钢材商行',
                 tax: '92440300L375629906',
-                bank: '深圳农村商业银行南约支行',
+                bank: '深圳农村商业银行南约支行 (行号:402584002199)',
                 account: '000106704608',
                 address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
                 phone: '0755-28262135',
-                taxText: '含普通发票及运费'
+                taxText: '含普通发票及运费',
+                showSeal: false // 惠新发隐藏三合一印章
             }
         };
 
@@ -359,6 +350,9 @@
             
             document.getElementById('partyA_phone').value = data.phone;
             document.getElementById('tax-term-text').innerText = data.taxText;
+
+            // 智能控制印章显示
+            document.getElementById('partyA_seal').style.display = data.showSeal ? 'block' : 'none';
         }
 
         window.onload = function() {
@@ -402,30 +396,22 @@
             closeParseModal();
         }
 
-        // ================= 全新：极其智能的“以下空白”探测系统 =================
         function checkBlankRows() {
             const rows = Array.from(document.querySelectorAll('.calc-row'));
             let lastContentIndex = -1;
 
-            // 1. 找到所有带真实内容，或当前鼠标正在输入的行
             rows.forEach((row, index) => {
                 const inputs = row.querySelectorAll('input:not(.row-total)');
                 let hasContent = false;
                 inputs.forEach(input => {
-                    // 如果仅仅是系统写的“以下空白”，不算做有内容
                     if (input.classList.contains('name-input') && input.value === '以下空白') return; 
                     if (input.value.trim() !== '') hasContent = true;
                 });
                 
-                // 重点：如果用户光标在这一行，这一行就被视为“工作区末端”
                 let isFocused = row.contains(document.activeElement);
-
-                if (hasContent || isFocused) {
-                    lastContentIndex = index;
-                }
+                if (hasContent || isFocused) { lastContentIndex = index; }
             });
 
-            // 如果用户写到了表格的最后一行，系统自动增加一行空行，用来放“以下空白”！
             if (lastContentIndex === rows.length - 1) {
                 const tbody = document.getElementById('product-tbody');
                 const newTr = document.createElement('tr');
@@ -446,11 +432,10 @@
                     </td>
                 `;
                 tbody.appendChild(newTr);
-                setTimeout(checkBlankRows, 10); // 递归调用给新行打上“以下空白”
+                setTimeout(checkBlankRows, 10); 
                 return; 
             }
 
-            // 2. 只有在最后一行的【正下方】才写入“以下空白”，并且清理掉其他位置瞎跑的“以下空白”
             rows.forEach((row, index) => {
                 const nameInput = row.querySelector('.name-input');
                 if (lastContentIndex >= 0 && index === lastContentIndex + 1) {
@@ -461,14 +446,11 @@
             });
         }
 
-        // 全局绑定表格的输入、进入、离开事件
         const tbody = document.getElementById('product-tbody');
         tbody.addEventListener('input', checkBlankRows);
         tbody.addEventListener('focusin', checkBlankRows);
         tbody.addEventListener('focusout', () => setTimeout(checkBlankRows, 10));
 
-
-        // ================= 修复：从当前行的“正下方”插入新行 =================
         function addRow(btn) {
             const tr = btn.closest('tr');
             const newTr = document.createElement('tr');
@@ -488,23 +470,19 @@
                     </div>
                 </td>
             `;
-            tr.after(newTr); // 物理插入到这行之后
-            
-            // 重点：自动把光标聚焦到新出来的这一行上
+            tr.after(newTr); 
             const firstInput = newTr.querySelector('.name-input');
             if (firstInput) firstInput.focus();
-            
             checkBlankRows();
         }
 
-        // ================= 修复：精准删除当前行 =================
         function removeRow(btn) {
             if(document.querySelectorAll('.calc-row').length <= 1) {
                 alert("至少保留一行明细！"); return;
             }
-            btn.closest('tr').remove(); // 物理删除点中的这行
+            btn.closest('tr').remove(); 
             calcTotal();
-            checkBlankRows(); // 重新整理“以下空白”
+            checkBlankRows(); 
         }
 
         function calcTotal() {
@@ -537,42 +515,6 @@
             return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
         }
 
-        // ================= 手写签名与导出PDF =================
-        const modal = document.getElementById('signature-modal');
-        const canvas = document.getElementById('modal-canvas');
-        const ctx = canvas.getContext('2d');
-        let isDrawing = false, hasDrawn = false;
-
-        function initCanvas() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width; canvas.height = rect.height;
-            ctx.strokeStyle = '#000000'; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        }
-        function openSignatureModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(initCanvas, 50); }
-        function closeSignatureModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; hasDrawn = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); });
-        canvas.addEventListener('mousemove', (e) => { if (isDrawing) { ctx.lineTo(getPos(e).x, getPos(e).y); ctx.stroke(); } });
-        window.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDrawing = true; hasDrawn = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (isDrawing) { ctx.lineTo(getPos(e).x, getPos(e).y); ctx.stroke(); } });
-        window.addEventListener('touchend', () => isDrawing = false);
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasDrawn = false; }
-        
-        function confirmSignature() {
-            if (!hasDrawn) return alert("请签名！");
-            document.getElementById('sign-tip').classList.add('hidden');
-            const resultImg = document.getElementById('signature-result');
-            resultImg.src = canvas.toDataURL("image/png"); resultImg.classList.remove('hidden');
-            closeSignatureModal();
-        }
-
-       // ================= 核心修改：精准控制导出的 PDF 文件名 =================
         function downloadPDF() {
             window.scrollTo(0, 0); 
             const element = document.getElementById('contract-content');
@@ -581,19 +523,17 @@
             const textareas = element.querySelectorAll('textarea');
             inputs.forEach(input => { input.setAttribute('data-placeholder', input.placeholder || ''); input.placeholder = ''; input.setAttribute('value', input.value); });
             textareas.forEach(textarea => { textarea.setAttribute('data-placeholder', textarea.placeholder || ''); textarea.placeholder = ''; textarea.textContent = textarea.value; });
-            document.querySelectorAll('.sign-tip').forEach(el => el.style.display = 'none');
-
+            
             const btn = document.getElementById('pdf-btn');
             const originalText = btn.innerHTML; btn.innerHTML = '正在生成...';
 
-            // 提取甲方公司名称和合同编号，拼接文件名
             const partyAName = document.getElementById('top-partyA-name').innerText;
             const contractNo = document.getElementById('contract-no').value;
 
             html2pdf().set({
                 margin: 0, 
-                // 格式为：甲方公司名称_合同编号_购销合同.pdf
-                filename: `${partyAName}_${contractNo}.pdf`,
+                filename: `${partyAName}_${contractNo}_购销合同.pdf`,
+                // 提高图片和文字生成质量，防止印章模糊
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -601,7 +541,6 @@
                 btn.innerHTML = originalText;
                 inputs.forEach(input => { input.placeholder = input.getAttribute('data-placeholder'); });
                 textareas.forEach(textarea => { textarea.placeholder = textarea.getAttribute('data-placeholder'); });
-                document.querySelectorAll('.sign-tip').forEach(el => el.style.display = '');
             });
         }
     </script>
