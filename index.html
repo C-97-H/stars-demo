@@ -212,7 +212,7 @@
                     <!-- 甲方区域 (带自动图章和签名) -->
                     <td class="w-1/2 px-2 py-1.5 relative overflow-hidden">
                         
-                        <!-- ！！！电子公章 (仅三合一显示，绝对居中靠右，逼真混合模式) ！！！ -->
+                        <!-- ！！！电子公章 (动态切换印章图片) ！！！ -->
                         <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-2 w-[160px] h-[160px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
 
                         <div class="flex flex-col gap-1.5 relative z-0">
@@ -322,7 +322,8 @@
                 address: '深圳市龙岗区宝龙街道南约社区高科大道56号万达工业园1号厂房301G',
                 phone: '0755-28262135',
                 taxText: '（含13%增值税）及运费',
-                showSeal: true // 三合一显示印章
+                showSeal: true, 
+                sealSrc: './seal.png' // 三合一的印章图片
             },
             huixinfa: {
                 name: '深圳市龙岗区惠新发五金钢材商行',
@@ -332,7 +333,8 @@
                 address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
                 phone: '0755-28262135',
                 taxText: '含普通发票及运费',
-                showSeal: false // 惠新发隐藏三合一印章
+                showSeal: true, // 改为 true 显示印章
+                sealSrc: './seal_custom.png' // 惠新发的印章图片
             }
         };
 
@@ -351,8 +353,14 @@
             document.getElementById('partyA_phone').value = data.phone;
             document.getElementById('tax-term-text').innerText = data.taxText;
 
-            // 智能控制印章显示
-            document.getElementById('partyA_seal').style.display = data.showSeal ? 'block' : 'none';
+            // 智能控制印章显示并动态切换印章图片
+            const sealImg = document.getElementById('partyA_seal');
+            if (data.showSeal) {
+                sealImg.src = data.sealSrc;
+                sealImg.style.display = 'block';
+            } else {
+                sealImg.style.display = 'none';
+            }
         }
 
         window.onload = function() {
