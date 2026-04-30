@@ -31,6 +31,7 @@
         }
         .box-table, .box-table th, .box-table td {
             border: 0.5pt solid #000000 !important;
+            transition: background-color 0.2s;
         }
 
         input, textarea {
@@ -41,10 +42,39 @@
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
 
-        /* 印章和签名的逼真混合模式（过滤掉白底，像真墨水一样融合） */
+        /* 印章和签名的逼真混合模式 */
         .realistic-stamp {
             mix-blend-mode: multiply;
             pointer-events: none;
+        }
+
+        /* 拖拽列宽的分割线控制器 */
+        .resizer {
+            position: absolute;
+            top: 0;
+            right: -2.5px;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            z-index: 10;
+            background-color: transparent;
+            transition: background-color 0.2s;
+        }
+        .resizer:hover, .resizer.resizing {
+            background-color: #3b82f6; 
+        }
+
+        /* 被选中的合并单元格高亮 */
+        .cell-selected {
+            outline: 2px solid #3b82f6 !important;
+            outline-offset: -2px;
+            background-color: #eff6ff !important;
+            z-index: 20;
+            position: relative;
+        }
+        .cell-selected input, .cell-selected textarea {
+            background-color: transparent !important;
         }
         
         @media print {
@@ -53,6 +83,8 @@
             input::placeholder, textarea::placeholder { color: transparent !important; }
             .a4-paper { box-shadow: none; margin: 0; width: 100%; min-height: 100%; padding: 10mm; }
             @page { size: A4 portrait; margin: 0; }
+            .resizer { display: none !important; }
+            .cell-selected { outline: none !important; background-color: transparent !important; }
         }
     </style>
 </head>
@@ -114,16 +146,16 @@
         </div>
 
         <!-- 购销表格 -->
-        <table class="box-table text-[12px] text-center mb-2">
+        <table id="product-table" class="box-table text-[12px] text-center mb-2">
             <thead>
                 <tr class="bg-gray-50 font-bold">
-                    <th class="p-1.5">名 称</th>
-                    <th class="p-1.5 w-12">单位</th>
-                    <th class="p-1.5 w-16">数量</th>
-                    <th class="p-1.5 w-20">含税单价</th>
-                    <th class="p-1.5 w-24">含税合计</th>
-                    <th class="p-1.5 w-20">交付周期</th>
-                    <th class="p-1.5 w-24">备 注</th>
+                    <th class="p-1.5 relative" style="width: auto;">名 称</th>
+                    <th class="p-1.5 relative w-12" style="width: 48px;">单位</th>
+                    <th class="p-1.5 relative w-16" style="width: 64px;">数量</th>
+                    <th class="p-1.5 relative w-20" style="width: 80px;">含税单价</th>
+                    <th class="p-1.5 relative w-24" style="width: 96px;">含税合计</th>
+                    <th class="p-1.5 relative w-20" style="width: 80px;">交付周期</th>
+                    <th class="p-1.5 relative w-24" style="width: 96px;">备 注</th>
                 </tr>
             </thead>
             <tbody id="product-tbody">
@@ -211,10 +243,7 @@
                 <tr class="align-top">
                     <!-- 甲方区域 (带自动图章和签名) -->
                     <td class="w-1/2 px-2 py-1.5 relative overflow-hidden">
-                        
-                        <!-- ！！！电子公章 (动态切换印章图片) ！！！ -->
                         <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-2 w-[160px] h-[160px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
-
                         <div class="flex flex-col gap-1.5 relative z-0">
                             <p class="font-bold mb-0.5">甲方：</p>
                             <div class="flex items-center">
@@ -228,7 +257,6 @@
                             <div class="flex items-end h-9">
                                 <span class="w-[6.5rem] mb-1">法定/委托代理人：</span>
                                 <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
-                                    <!-- ！！！电子签名 (绝对定位在横线上方，逼真混合模式) ！！！ -->
                                     <img id="partyA_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-10 w-auto z-20" alt="签名" onerror="this.style.display='none'">
                                 </div>
                             </div>
@@ -290,6 +318,19 @@
         </table>
     </div>
 
+    <!-- 优化版右键合并单元格智能菜单 -->
+    <div id="table-context-menu" class="hidden absolute z-50 bg-white border border-gray-300 shadow-xl rounded py-1.5 w-32 text-[13px] font-medium text-gray-700 no-print">
+        <div id="menu-merge-down" class="px-4 py-2 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition flex items-center" onclick="doMerge('down')">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg> 向下合并
+        </div>
+        <div id="menu-merge-right" class="px-4 py-2 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition flex items-center" onclick="doMerge('right')">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg> 向右合并
+        </div>
+        <div id="menu-unmerge" class="px-4 py-2 hover:bg-red-50 hover:text-red-600 cursor-pointer transition flex items-center border-t border-gray-100 mt-1 pt-1" onclick="doUnmerge()">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z"></path></svg> 取消合并
+        </div>
+    </div>
+
     <!-- 弹窗：智能识别乙方 -->
     <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
         <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col">
@@ -308,6 +349,230 @@
     </div>
 
     <script>
+        // ====== 表格列宽拖动功能 ======
+        function initResizableTable() {
+            const table = document.getElementById('product-table');
+            const ths = table.querySelectorAll('thead th');
+            
+            ths.forEach(th => {
+                let w = th.getBoundingClientRect().width;
+                th.style.width = w + 'px';
+            });
+            table.style.tableLayout = 'fixed';
+
+            ths.forEach((th, index) => {
+                if (index === ths.length - 1) return;
+                const resizer = document.createElement('div');
+                resizer.classList.add('resizer');
+                th.appendChild(resizer);
+                
+                let startX, startW, nextStartW;
+                let nextTh = ths[index + 1];
+
+                resizer.addEventListener('mousedown', function(e) {
+                    startX = e.clientX;
+                    startW = th.getBoundingClientRect().width;
+                    nextStartW = nextTh.getBoundingClientRect().width;
+                    resizer.classList.add('resizing');
+                    
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                    e.preventDefault(); e.stopPropagation();
+                });
+
+                function mouseMoveHandler(e) {
+                    let dx = e.clientX - startX;
+                    if (startW + dx > 20 && nextStartW - dx > 20) {
+                        th.style.width = (startW + dx) + 'px';
+                        nextTh.style.width = (nextStartW - dx) + 'px';
+                    }
+                }
+
+                function mouseUpHandler() {
+                    resizer.classList.remove('resizing');
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                }
+            });
+        }
+
+        // ====== 智能合并单元格引擎 ======
+        let rightClickedTd = null;
+
+        function hideContextMenu() {
+            document.getElementById('table-context-menu').style.display = 'none';
+            if (rightClickedTd) rightClickedTd.classList.remove('cell-selected');
+        }
+
+        document.addEventListener('contextmenu', function(e) {
+            const td = e.target.closest('#product-tbody td');
+            if (td) {
+                e.preventDefault();
+                hideContextMenu(); // 清除之前的选中状态
+                
+                rightClickedTd = td;
+                rightClickedTd.classList.add('cell-selected'); // 选中高亮反馈
+
+                const tr = td.closest('tr');
+                const rowIdx = Array.from(tr.parentElement.children).indexOf(tr);
+                const colIdx = Array.from(tr.children).indexOf(td);
+                let rSpan = parseInt(td.getAttribute('rowspan') || 1);
+                let cSpan = parseInt(td.getAttribute('colspan') || 1);
+
+                const targetRowIdx = rowIdx + rSpan;
+                const targetColIdx = colIdx + cSpan;
+                
+                // 智能检测是否还能合并（判断边界和隐藏状态）
+                let canMergeDown = !!(tr.parentElement.children[targetRowIdx] && tr.parentElement.children[targetRowIdx].children[colIdx] && tr.parentElement.children[targetRowIdx].children[colIdx].style.display !== 'none');
+                let canMergeRight = !!(tr.children[targetColIdx] && tr.children[targetColIdx].style.display !== 'none');
+                let canUnmerge = (rSpan > 1 || cSpan > 1);
+
+                document.getElementById('menu-merge-down').style.display = canMergeDown ? 'flex' : 'none';
+                document.getElementById('menu-merge-right').style.display = canMergeRight ? 'flex' : 'none';
+                document.getElementById('menu-unmerge').style.display = canUnmerge ? 'flex' : 'none';
+
+                const menu = document.getElementById('table-context-menu');
+                // 如果全都不能操作，显示空提示
+                if(!canMergeDown && !canMergeRight && !canUnmerge) {
+                    menu.innerHTML = '<div class="px-4 py-2 text-gray-400 cursor-not-allowed text-center">无可用操作</div>';
+                } else {
+                    // 恢复原有DOM结构(重置)
+                    menu.innerHTML = `
+                        <div id="menu-merge-down" class="px-4 py-2 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition flex items-center" onclick="doMerge('down')" style="display:${canMergeDown?'flex':'none'}">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg> 向下合并
+                        </div>
+                        <div id="menu-merge-right" class="px-4 py-2 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition flex items-center" onclick="doMerge('right')" style="display:${canMergeRight?'flex':'none'}">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg> 向右合并
+                        </div>
+                        <div id="menu-unmerge" class="px-4 py-2 hover:bg-red-50 hover:text-red-600 cursor-pointer transition flex items-center border-t border-gray-100 mt-1 pt-1" onclick="doUnmerge()" style="display:${canUnmerge?'flex':'none'}">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z"></path></svg> 取消合并
+                        </div>
+                    `;
+                }
+                
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            } else {
+                hideContextMenu();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#table-context-menu')) {
+                hideContextMenu();
+            }
+        });
+
+        // 动态转换文本框类型：单行 input 转多行 textarea，完美适配大格子
+        function transformToTextarea(td) {
+            const input = td.querySelector('input[type="text"]:not(.row-total)');
+            if(input) {
+                const textarea = document.createElement('textarea');
+                textarea.className = input.className + ' resize-none py-1 leading-snug';
+                textarea.value = input.value;
+                Array.from(input.attributes).forEach(attr => {
+                    if(attr.name !== 'type' && attr.name !== 'class' && attr.name !== 'value') {
+                        textarea.setAttribute(attr.name, attr.value);
+                    }
+                });
+                input.replaceWith(textarea);
+            }
+        }
+
+        // 动态转换文本框类型：多行 textarea 还原为单行 input
+        function transformToInput(td) {
+            const textarea = td.querySelector('textarea');
+            if(textarea) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = textarea.className.replace('resize-none py-1 leading-snug', '').trim();
+                input.value = textarea.value.replace(/\n/g, ' '); 
+                Array.from(textarea.attributes).forEach(attr => {
+                    if(attr.name !== 'class' && attr.name !== 'value') {
+                        input.setAttribute(attr.name, attr.value);
+                    }
+                });
+                textarea.replaceWith(input);
+            }
+        }
+
+        function doMerge(direction) {
+            if(!rightClickedTd) return;
+            const tr = rightClickedTd.closest('tr');
+            const colIdx = Array.from(tr.children).indexOf(rightClickedTd);
+            const rowIdx = Array.from(tr.parentElement.children).indexOf(tr);
+            let targetTd = null;
+
+            let rSpan1 = parseInt(rightClickedTd.getAttribute('rowspan') || 1);
+            let cSpan1 = parseInt(rightClickedTd.getAttribute('colspan') || 1);
+
+            if (direction === 'down') {
+                const targetTr = tr.parentElement.children[rowIdx + rSpan1];
+                if (targetTr) targetTd = targetTr.children[colIdx];
+            } else if (direction === 'right') {
+                targetTd = tr.children[colIdx + cSpan1];
+            }
+
+            if (targetTd && targetTd.style.display !== 'none') {
+                let rSpan2 = parseInt(targetTd.getAttribute('rowspan') || 1);
+                let cSpan2 = parseInt(targetTd.getAttribute('colspan') || 1);
+
+                if (direction === 'down') {
+                    if (cSpan1 !== cSpan2) { alert('列宽不一致，无法向下合并（请先对齐宽度）'); return; }
+                    rightClickedTd.setAttribute('rowspan', rSpan1 + rSpan2);
+                } else {
+                    if (rSpan1 !== rSpan2) { alert('行高不一致，无法向右合并（请先对齐高度）'); return; }
+                    rightClickedTd.setAttribute('colspan', cSpan1 + cSpan2);
+                }
+
+                // 彻底清空并隐藏被合并的单元格，防止系统偷偷计算金额
+                const targetInputs = targetTd.querySelectorAll('input, textarea');
+                targetInputs.forEach(inp => { 
+                    inp.value = ''; 
+                    inp.dispatchEvent(new Event('input', { bubbles: true })); 
+                });
+                
+                targetTd.style.display = 'none';
+                transformToTextarea(rightClickedTd); // 合并后变成大格子，允许换行输入
+                calcTotal(); 
+            }
+            hideContextMenu();
+        }
+
+        function doUnmerge() {
+            if(!rightClickedTd) return;
+            let rSpan = parseInt(rightClickedTd.getAttribute('rowspan') || 1);
+            let cSpan = parseInt(rightClickedTd.getAttribute('colspan') || 1);
+
+            if(rSpan > 1 || cSpan > 1) {
+                const tr = rightClickedTd.closest('tr');
+                const rowIdx = Array.from(tr.parentElement.children).indexOf(tr);
+                const colIdx = Array.from(tr.children).indexOf(rightClickedTd);
+
+                for(let r = 0; r < rSpan; r++) {
+                    const targetTr = tr.parentElement.children[rowIdx + r];
+                    if(!targetTr) continue;
+                    for(let c = 0; c < cSpan; c++) {
+                        if(r === 0 && c === 0) continue;
+                        const targetTd = targetTr.children[colIdx + c];
+                        if(targetTd) {
+                            targetTd.style.display = '';
+                            targetTd.removeAttribute('rowspan');
+                            targetTd.removeAttribute('colspan');
+                            transformToInput(targetTd); // 拆分后恢复原样
+                        }
+                    }
+                }
+                rightClickedTd.removeAttribute('rowspan');
+                rightClickedTd.removeAttribute('colspan');
+                transformToInput(rightClickedTd); // 自身也恢复单行
+                calcTotal();
+            }
+            hideContextMenu();
+        }
+
+        // ====== 原有基本逻辑 ======
         function adjustTextareaHeight(el) {
             el.style.height = '18px'; 
             el.style.height = el.scrollHeight + 'px'; 
@@ -323,7 +588,7 @@
                 phone: '0755-28262135',
                 taxText: '（含13%增值税）及运费',
                 showSeal: true, 
-                sealSrc: './seal.png' // 三合一的印章图片
+                sealSrc: './seal_sanheyi.png'
             },
             huixinfa: {
                 name: '深圳市龙岗区惠新发五金钢材商行',
@@ -333,8 +598,8 @@
                 address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
                 phone: '0755-28262135',
                 taxText: '含普通发票及运费',
-                showSeal: true, // 改为 true 显示印章
-                sealSrc: './seal_custom.png' // 惠新发的印章图片
+                showSeal: true,
+                sealSrc: './seal_huixinfa.png' 
             }
         };
 
@@ -353,7 +618,6 @@
             document.getElementById('partyA_phone').value = data.phone;
             document.getElementById('tax-term-text').innerText = data.taxText;
 
-            // 智能控制印章显示并动态切换印章图片
             const sealImg = document.getElementById('partyA_seal');
             if (data.showSeal) {
                 sealImg.src = data.sealSrc;
@@ -374,6 +638,8 @@
 
             document.getElementById('sign-date').value = `${year}年${month}月${day}日`;
             document.getElementById('contract-no').value = `${year}${month}${day}${hour}${minute}`;
+            
+            initResizableTable();
         };
 
         function openParseModal() { document.getElementById('parse-modal').classList.remove('hidden'); document.getElementById('parse-modal').classList.add('flex'); }
@@ -409,13 +675,13 @@
             let lastContentIndex = -1;
 
             rows.forEach((row, index) => {
-                const inputs = row.querySelectorAll('input:not(.row-total)');
+                const inputs = row.querySelectorAll('input:not(.row-total), textarea');
                 let hasContent = false;
                 inputs.forEach(input => {
+                    if (input.closest('td').style.display === 'none') return;
                     if (input.classList.contains('name-input') && input.value === '以下空白') return; 
                     if (input.value.trim() !== '') hasContent = true;
                 });
-                
                 let isFocused = row.contains(document.activeElement);
                 if (hasContent || isFocused) { lastContentIndex = index; }
             });
@@ -446,10 +712,12 @@
 
             rows.forEach((row, index) => {
                 const nameInput = row.querySelector('.name-input');
-                if (lastContentIndex >= 0 && index === lastContentIndex + 1) {
-                    if (nameInput.value === '') nameInput.value = '以下空白';
-                } else {
-                    if (nameInput.value === '以下空白') nameInput.value = '';
+                if (nameInput && nameInput.closest('td').style.display !== 'none') {
+                    if (lastContentIndex >= 0 && index === lastContentIndex + 1) {
+                        if (nameInput.value === '') nameInput.value = '以下空白';
+                    } else {
+                        if (nameInput.value === '以下空白') nameInput.value = '';
+                    }
                 }
             });
         }
@@ -459,8 +727,22 @@
         tbody.addEventListener('focusin', checkBlankRows);
         tbody.addEventListener('focusout', () => setTimeout(checkBlankRows, 10));
 
+        // 强力防御机制：检测当前行是否卷入了合并单元格（防止加行/删行打乱布局）
+        function isRowInvolvedInMerge(tr) {
+            return Array.from(tr.children).some(td => 
+                parseInt(td.getAttribute('rowspan') || 1) > 1 || 
+                parseInt(td.getAttribute('colspan') || 1) > 1 || 
+                td.style.display === 'none'
+            );
+        }
+
         function addRow(btn) {
             const tr = btn.closest('tr');
+            if (isRowInvolvedInMerge(tr)) {
+                alert("安全提示：当前行包含【已合并的单元格】。\n\n在合并区间内直接插入新行会导致表格结构损坏，请先【右键->取消合并】后再增加行！");
+                return;
+            }
+            
             const newTr = document.createElement('tr');
             newTr.className = 'h-6 calc-row group relative';
             newTr.innerHTML = `
@@ -485,10 +767,16 @@
         }
 
         function removeRow(btn) {
+            const tr = btn.closest('tr');
+            if (isRowInvolvedInMerge(tr)) {
+                alert("安全提示：当前行包含【已合并的单元格】。\n\n直接删除会导致表格结构损坏，请先【右键->取消合并】后再删除此行！");
+                return;
+            }
+
             if(document.querySelectorAll('.calc-row').length <= 1) {
                 alert("至少保留一行明细！"); return;
             }
-            btn.closest('tr').remove(); 
+            tr.remove(); 
             calcTotal();
             checkBlankRows(); 
         }
@@ -496,12 +784,24 @@
         function calcTotal() {
             let grandTotal = 0;
             document.querySelectorAll('.calc-row').forEach(row => {
-                const qty = parseFloat(row.querySelector('.qty').value) || 0;
-                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const qtyInput = row.querySelector('.qty');
+                const priceInput = row.querySelector('.price');
                 const totalInput = row.querySelector('.row-total');
+                
+                const isHidden = (el) => el && el.closest('td').style.display === 'none';
+
+                const qty = (!isHidden(qtyInput) && parseFloat(qtyInput.value)) ? parseFloat(qtyInput.value) : 0;
+                const price = (!isHidden(priceInput) && parseFloat(priceInput.value)) ? parseFloat(priceInput.value) : 0;
                 const rowTotal = qty * price;
-                if(rowTotal > 0) { totalInput.value = rowTotal.toFixed(2); grandTotal += rowTotal; } 
-                else { totalInput.value = ''; }
+
+                if (!isHidden(totalInput)) {
+                    if(rowTotal > 0) { 
+                        totalInput.value = rowTotal.toFixed(2); 
+                        grandTotal += rowTotal; 
+                    } else { 
+                        totalInput.value = ''; 
+                    }
+                }
             });
             const grandTotalInput = document.getElementById('grand-total');
             grandTotalInput.value = grandTotal > 0 ? amountToChinese(grandTotal) + ` (¥${grandTotal.toFixed(2)})` : '';
@@ -541,7 +841,6 @@
             html2pdf().set({
                 margin: 0, 
                 filename: `${partyAName}_${contractNo}_购销合同.pdf`,
-                // 提高图片和文字生成质量，防止印章模糊
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
