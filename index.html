@@ -24,7 +24,7 @@
             position: relative;
         }
         
-        /* 强制所有表格线宽为 0.5pt (极其正规的打印线宽) */
+        /* 强制所有表格线宽为 0.5pt */
         .box-table {
             border-collapse: collapse;
             width: 100%;
@@ -41,12 +41,17 @@
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
 
-        /* 印章和签名的逼真混合模式（过滤掉白底，像真墨水一样融合） */
         .realistic-stamp {
             mix-blend-mode: multiply;
             pointer-events: none;
         }
         
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
@@ -56,253 +61,294 @@
         }
     </style>
 </head>
-<body class="text-gray-900">
+<body class="text-gray-900 bg-gray-100">
 
-    <!-- 顶部操作栏 -->
-    <div class="no-print flex flex-wrap justify-center gap-3 py-3 bg-gray-800 sticky top-0 z-40 shadow-md w-full px-4">
-        <div class="flex bg-gray-700 rounded overflow-hidden shadow-sm">
-            <button onclick="switchCompany('sanheyi')" class="px-4 py-2 bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition border-r border-indigo-800">
-                三合一 (专票)
+    <!-- 顶部操作栏 (固定高度 60px) -->
+    <div class="no-print fixed top-0 w-full h-[60px] bg-gray-800 z-50 shadow-md flex items-center justify-between px-6">
+        <div class="flex items-center gap-4">
+            <h1 class="text-white font-bold text-lg tracking-widest mr-4">合同生成系统</h1>
+            <div class="flex bg-gray-700 rounded overflow-hidden shadow-sm">
+                <button onclick="switchCompany('sanheyi')" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition border-r border-indigo-800">
+                    三合一 (专票)
+                </button>
+                <button onclick="switchCompany('huixinfa')" class="px-4 py-1.5 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition">
+                    惠新发 (普票)
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()" class="px-5 py-1.5 bg-green-600 text-white text-sm font-bold rounded shadow-sm hover:bg-green-700 transition flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                直接打印
             </button>
-            <button onclick="switchCompany('huixinfa')" class="px-4 py-2 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition">
-                惠新发 (普票)
+            <button onclick="downloadPDF()" id="pdf-btn" class="px-5 py-1.5 bg-blue-600 text-white text-sm font-bold rounded shadow-sm hover:bg-blue-700 transition flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                下载 PDF
             </button>
         </div>
-        <button onclick="openParseModal()" class="px-4 py-2 bg-fuchsia-600 text-white text-sm font-bold rounded hover:bg-fuchsia-700 transition shadow-sm flex items-center">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            识别乙方信息
-        </button>
-        <button onclick="window.print()" class="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 transition shadow-sm ml-auto">
-            直接打印
-        </button>
-        <button onclick="downloadPDF()" id="pdf-btn" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition shadow-sm">
-            下载 PDF
-        </button>
     </div>
 
-    <!-- 合同主体 -->
-    <div id="contract-content" class="a4-paper flex flex-col bg-white">
+    <!-- 左侧客户管理边栏 -->
+    <aside class="no-print fixed left-0 top-[60px] bottom-0 w-[280px] bg-white shadow-[4px_0_24px_rgba(0,0,0,0.04)] border-r border-gray-200 z-40 flex flex-col">
+        <!-- 侧边栏头部 -->
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-gray-700 flex items-center tracking-wide">
+                <svg class="w-4 h-4 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                历史客户库
+            </h2>
+            <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold" id="history-count">0</span>
+        </div>
         
-        <h1 class="text-2xl font-bold text-center tracking-[0.5em] mb-3">产品买卖合同</h1>
-
-        <!-- 抬头信息 -->
-        <div class="flex justify-between text-[13px] mb-2 leading-tight">
-            <div class="flex flex-col gap-1 w-1/2">
-                <p class="flex items-end">
-                    <span class="w-12">甲方：</span>
-                    <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5">深圳市三合一五金有限公司</span>
-                </p>
-                <p class="flex items-end">
-                    <span class="w-12">乙方：</span>
-                    <input type="text" id="top-partyB-name" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold" placeholder="请填写或识别乙方">
-                </p>
-            </div>
-            <div class="flex flex-col gap-1 w-[40%]">
-                <p class="flex items-end">
-                    <span class="w-20 text-right">签订地点：</span>
-                    <span class="flex-1 border-b border-gray-500 pb-0.5">深圳市龙岗区万达科技园</span>
-                </p>
-                <p class="flex items-end">
-                    <span class="w-20 text-right">签订时间：</span>
-                    <input type="text" id="sign-date" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
-                </p>
-                <p class="flex items-end">
-                    <span class="w-20 text-right">合同编号：</span>
-                    <input type="text" id="contract-no" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
-                </p>
+        <!-- 搜索框 -->
+        <div class="p-3 border-b border-gray-100">
+            <div class="relative">
+                <input type="text" id="client-search" oninput="filterClients()" placeholder="搜索公司名称..." class="w-full bg-gray-100 text-xs rounded-md pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:bg-white transition">
+                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
         </div>
 
-        <!-- 购销表格 -->
-        <table class="box-table text-[12px] text-center mb-2">
-            <thead>
-                <tr class="bg-gray-50 font-bold">
-                    <th class="p-1.5">名 称</th>
-                    <th class="p-1.5 w-12">单位</th>
-                    <th class="p-1.5 w-16">数量</th>
-                    <th class="p-1.5 w-20">含税单价</th>
-                    <th class="p-1.5 w-24">含税合计</th>
-                    <th class="p-1.5 w-20">交付周期</th>
-                    <th class="p-1.5 w-24">备 注</th>
-                </tr>
-            </thead>
-            <tbody id="product-tbody">
-                <!-- 初始三行 -->
-                <tr class="h-6 calc-row group relative">
-                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0 relative">
-                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="h-6 calc-row group relative">
-                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0 relative">
-                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="h-6 calc-row group relative">
-                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0 relative">
-                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-            <tbody>
-                <!-- 合计行 -->
-                <tr>
-                    <td colspan="7" class="p-1.5 text-left font-bold relative">
-                        人民币金额（大写）：<input type="text" id="grand-total" class="w-72 border-b border-dotted border-gray-600 focus:outline-none px-1 text-blue-800" placeholder="填写上方数量单价自动计算" readonly tabindex="-1">
-                        <span id="tax-term-text">（含13%增值税）及运费</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- 条款 -->
-        <div class="text-[11.5px] leading-[1.3] text-justify flex-1 flex flex-col justify-between mb-1">
-            <p>第一条、质量要求技术标准：按国家标准，生产厂家有关标准执行，符合需方订单要求及技术要求。</p>
-            <p>第二条、乙方对质量负责的条件及期限：质保期 5年。</p>
-            <p>第三条、包装标准、包装物的供应与回收：包装物不回收。</p>
-            <p>第四条、随机的必备品、配件、工具数量及供应办法：符合本合同第二条规定。</p>
-            <p>第五条、合理损耗及计算方法：无。</p>
-            <p>第六条、标的物自验收合格时起交付。</p>
-            <p>第七条、交货地点、方式：需方指定地点，汽车运输。</p>
-            <p>第八条、运输及到达站（港）和费用负担：供方负责运输。</p>
-            <p>第九条、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
-            <p>第十条、设备的安装与调试：无。</p>
-            <p>第十一条、结算方式、时间及地点：<input type="text" class="w-10 border-b border-black text-center focus:outline-none text-[12px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
-            <p>第十二条、违约责任：其他按合同法执行。</p>
-            <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
-            <p>第十四条、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
-            <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
-            <p>第十六条、产品名称、金额、供货时间及数量。</p>
+        <!-- 历史客户列表区 -->
+        <div id="sidebar-history-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50">
+            <!-- JS 动态渲染 -->
         </div>
 
-        <!-- 签章区 -->
-        <table class="box-table text-[11.5px]">
-            <tbody>
-                <tr class="align-top">
-                    <!-- 甲方区域 (带自动图章和签名) -->
-                    <td class="w-1/2 px-2 py-1.5 relative overflow-hidden">
-                        
-                        <!-- ！！！电子公章 (动态切换印章图片) ！！！ -->
-                        <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-2 w-[160px] h-[160px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
+        <!-- 底部一键识别按钮 -->
+        <div class="p-4 border-t border-gray-100 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+            <button onclick="openParseModal()" class="w-full py-2.5 bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-200 rounded-lg text-sm font-bold hover:bg-fuchsia-600 hover:text-white transition shadow-sm flex justify-center items-center group">
+                <svg class="w-4 h-4 mr-1.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                粘贴新客户资料
+            </button>
+        </div>
+    </aside>
 
-                        <div class="flex flex-col gap-1.5 relative z-0">
-                            <p class="font-bold mb-0.5">甲方：</p>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">单位名称（章）：</span>
-                                <input type="text" id="partyA_name" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+    <!-- 右侧合同主区域 (留出顶部和左侧边距) -->
+    <main class="ml-[280px] pt-[60px] pb-10 print:ml-0 print:pt-0 print:pb-0">
+        <div id="contract-content" class="a4-paper flex flex-col bg-white">
+            <h1 class="text-2xl font-bold text-center tracking-[0.5em] mb-3">产品买卖合同</h1>
+
+            <!-- 抬头信息 -->
+            <div class="flex justify-between text-[13px] mb-2 leading-tight">
+                <div class="flex flex-col gap-1 w-1/2">
+                    <p class="flex items-end">
+                        <span class="w-12">甲方：</span>
+                        <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5">深圳市三合一五金有限公司</span>
+                    </p>
+                    <p class="flex items-end">
+                        <span class="w-12">乙方：</span>
+                        <input type="text" id="top-partyB-name" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold text-indigo-900" placeholder="点击左侧客户快速填入">
+                    </p>
+                </div>
+                <div class="flex flex-col gap-1 w-[40%]">
+                    <p class="flex items-end">
+                        <span class="w-20 text-right">签订地点：</span>
+                        <span class="flex-1 border-b border-gray-500 pb-0.5">深圳市龙岗区万达科技园</span>
+                    </p>
+                    <p class="flex items-end">
+                        <span class="w-20 text-right">签订时间：</span>
+                        <input type="text" id="sign-date" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
+                    </p>
+                    <p class="flex items-end">
+                        <span class="w-20 text-right">合同编号：</span>
+                        <input type="text" id="contract-no" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
+                    </p>
+                </div>
+            </div>
+
+            <!-- 购销表格 -->
+            <table class="box-table text-[12px] text-center mb-2">
+                <thead>
+                    <tr class="bg-gray-50 font-bold">
+                        <th class="p-1.5">名 称</th>
+                        <th class="p-1.5 w-12">单位</th>
+                        <th class="p-1.5 w-16">数量</th>
+                        <th class="p-1.5 w-20">含税单价</th>
+                        <th class="p-1.5 w-24">含税合计</th>
+                        <th class="p-1.5 w-20">交付周期</th>
+                        <th class="p-1.5 w-24">备 注</th>
+                    </tr>
+                </thead>
+                <tbody id="product-tbody">
+                    <!-- 初始三行 -->
+                    <tr class="h-6 calc-row group relative">
+                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0 relative">
+                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
                             </div>
-                            <div class="flex items-start">
-                                <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
-                                <textarea id="partyA_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
+                        </td>
+                    </tr>
+                    <tr class="h-6 calc-row group relative">
+                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0 relative">
+                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
                             </div>
-                            <div class="flex items-end h-9">
-                                <span class="w-[6.5rem] mb-1">法定/委托代理人：</span>
-                                <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
-                                    <!-- ！！！电子签名 (绝对定位在横线上方，逼真混合模式) ！！！ -->
-                                    <img id="partyA_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-10 w-auto z-20" alt="签名" onerror="this.style.display='none'">
+                        </td>
+                    </tr>
+                    <tr class="h-6 calc-row group relative">
+                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="number" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
+                        <td class="p-0 relative">
+                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
+                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody>
+                    <!-- 合计行 -->
+                    <tr>
+                        <td colspan="7" class="p-1.5 text-left font-bold relative">
+                            人民币金额（大写）：<input type="text" id="grand-total" class="w-72 border-b border-dotted border-gray-600 focus:outline-none px-1 text-blue-800" placeholder="填写上方数量单价自动计算" readonly tabindex="-1">
+                            <span id="tax-term-text">（含13%增值税）及运费</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 条款 -->
+            <div class="text-[11.5px] leading-[1.3] text-justify flex-1 flex flex-col justify-between mb-1">
+                <p>第一条、质量要求技术标准：按国家标准，生产厂家有关标准执行，符合需方订单要求及技术要求。</p>
+                <p>第二条、乙方对质量负责的条件及期限：质保期 5年。</p>
+                <p>第三条、包装标准、包装物的供应与回收：包装物不回收。</p>
+                <p>第四条、随机的必备品、配件、工具数量及供应办法：符合本合同第二条规定。</p>
+                <p>第五条、合理损耗及计算方法：无。</p>
+                <p>第六条、标的物自验收合格时起交付。</p>
+                <p>第七条、交货地点、方式：需方指定地点，汽车运输。</p>
+                <p>第八条、运输及到达站（港）和费用负担：供方负责运输。</p>
+                <p>第九条、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
+                <p>第十条、设备的安装与调试：无。</p>
+                <p>第十一条、结算方式、时间及地点：<input type="text" class="w-10 border-b border-black text-center focus:outline-none text-[12px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
+                <p>第十二条、违约责任：其他按合同法执行。</p>
+                <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
+                <p>第十四条、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
+                <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
+                <p>第十六条、产品名称、金额、供货时间及数量。</p>
+            </div>
+
+            <!-- 签章区 -->
+            <table class="box-table text-[11.5px]">
+                <tbody>
+                    <tr class="align-top">
+                        <!-- 甲方区域 (带自动图章和签名) -->
+                        <td class="w-1/2 px-2 py-1.5 relative overflow-hidden">
+                            
+                            <!-- ！！！电子公章 (动态切换印章图片) ！！！ -->
+                            <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-2 w-[160px] h-[160px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
+
+                            <div class="flex flex-col gap-1.5 relative z-0">
+                                <p class="font-bold mb-0.5">甲方：</p>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">单位名称（章）：</span>
+                                    <input type="text" id="partyA_name" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
+                                    <textarea id="partyA_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
+                                </div>
+                                <div class="flex items-end h-9">
+                                    <span class="w-[6.5rem] mb-1">法定/委托代理人：</span>
+                                    <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
+                                        <!-- ！！！电子签名 (绝对定位在横线上方，逼真混合模式) ！！！ -->
+                                        <img id="partyA_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-10 w-auto z-20" alt="签名" onerror="this.style.display='none'">
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">电话：</span>
+                                    <input type="text" id="partyA_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">开户行：</span>
+                                    <input type="text" id="partyA_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">账号：</span>
+                                    <input type="text" id="partyA_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">纳税号：</span>
+                                    <input type="text" id="partyA_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
                                 </div>
                             </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">电话：</span>
-                                <input type="text" id="partyA_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                        </td>
+                        
+                        <!-- 乙方 -->
+                        <td class="w-1/2 px-2 py-1.5">
+                            <div class="flex flex-col gap-1.5">
+                                <p class="font-bold mb-0.5">乙方：</p>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">单位名称（章）：</span>
+                                    <input type="text" id="partyB_name" oninput="document.getElementById('top-partyB-name').value=this.value" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
+                                    <textarea id="partyB_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
+                                </div>
+                                <div class="flex items-center h-9">
+                                    <span class="w-[6.5rem]">法定/委托代理人：</span>
+                                    <input type="text" id="partyB_agent" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">电话：</span>
+                                    <input type="text" id="partyB_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">开户行：</span>
+                                    <input type="text" id="partyB_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">账号：</span>
+                                    <input type="text" id="partyB_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-[6.5rem]">纳税号：</span>
+                                    <input type="text" id="partyB_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                </div>
                             </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">开户行：</span>
-                                <input type="text" id="partyA_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">账号：</span>
-                                <input type="text" id="partyA_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">纳税号：</span>
-                                <input type="text" id="partyA_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                        </div>
-                    </td>
-                    
-                    <!-- 乙方 -->
-                    <td class="w-1/2 px-2 py-1.5">
-                        <div class="flex flex-col gap-1.5">
-                            <p class="font-bold mb-0.5">乙方：</p>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">单位名称（章）：</span>
-                                <input type="text" id="partyB_name" oninput="document.getElementById('top-partyB-name').value=this.value" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
-                            </div>
-                            <div class="flex items-start">
-                                <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
-                                <textarea id="partyB_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
-                            </div>
-                            <div class="flex items-center h-9">
-                                <span class="w-[6.5rem]">法定/委托代理人：</span>
-                                <input type="text" id="partyB_agent" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">电话：</span>
-                                <input type="text" id="partyB_phone" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">开户行：</span>
-                                <input type="text" id="partyB_bank" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">账号：</span>
-                                <input type="text" id="partyB_account" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                            <div class="flex items-center">
-                                <span class="w-[6.5rem]">纳税号：</span>
-                                <input type="text" id="partyB_tax" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
 
-    <!-- 弹窗：智能识别乙方 -->
-    <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col">
+    <!-- 弹窗：纯净的粘贴资料识别框 -->
+    <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col transform transition-all">
             <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                <h3 class="text-base font-bold text-gray-800">智能识别乙方信息</h3>
-                <button onclick="closeParseModal()" class="text-gray-400 hover:text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <h3 class="text-base font-bold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-fuchsia-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    智能粘贴识别
+                </h3>
+                <button onclick="closeParseModal()" class="text-gray-400 hover:text-red-500 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <div class="p-4">
-                <textarea id="parse-textarea" rows="6" class="w-full border border-gray-300 rounded p-3 text-sm focus:outline-none focus:border-fuchsia-500" placeholder="请粘贴客户资料..."></textarea>
+            <div class="p-5">
+                <p class="text-xs text-gray-500 mb-3">请粘贴客户全套开票资料，系统会自动提取并填入，同时<strong class="text-indigo-600">自动为您保存至历史客户库</strong>。</p>
+                <textarea id="parse-textarea" rows="6" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition shadow-inner" placeholder="在此处粘贴（支持带税号、地址、账号等杂乱文本）..."></textarea>
             </div>
-            <div class="px-4 py-3 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
-                <button onclick="closeParseModal()" class="px-4 py-2 border rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-sm">取消</button>
-                <button onclick="executeParse()" class="px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-sm font-bold shadow-md">一键识别</button>
+            <div class="px-5 py-4 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+                <button onclick="closeParseModal()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-sm transition">取消</button>
+                <button onclick="executeParse()" class="px-6 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-sm font-bold shadow-md transition transform hover:scale-105">一键提取填入</button>
             </div>
         </div>
     </div>
@@ -323,7 +369,7 @@
                 phone: '0755-28262135',
                 taxText: '（含13%增值税）及运费',
                 showSeal: true, 
-                sealSrc: './seal.png' // 三合一的印章图片
+                sealSrc: './seal.png' 
             },
             huixinfa: {
                 name: '深圳市龙岗区惠新发五金钢材商行',
@@ -333,8 +379,8 @@
                 address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
                 phone: '0755-28262135',
                 taxText: '含普通发票及运费',
-                showSeal: true, // 改为 true 显示印章
-                sealSrc: './seal_custom.png' // 惠新发的印章图片
+                showSeal: true, 
+                sealSrc: './seal_custom.png' 
             }
         };
 
@@ -353,7 +399,6 @@
             document.getElementById('partyA_phone').value = data.phone;
             document.getElementById('tax-term-text').innerText = data.taxText;
 
-            // 智能控制印章显示并动态切换印章图片
             const sealImg = document.getElementById('partyA_seal');
             if (data.showSeal) {
                 sealImg.src = data.sealSrc;
@@ -374,7 +419,118 @@
 
             document.getElementById('sign-date').value = `${year}年${month}月${day}日`;
             document.getElementById('contract-no').value = `${year}${month}${day}${hour}${minute}`;
+
+            // 初始化加载历史客户
+            renderSavedClients();
         };
+
+        // ================= 历史客户本地保存及侧边栏渲染 =================
+        let savedClients = JSON.parse(localStorage.getItem('contract_clients') || '{}');
+
+        function renderSavedClients(keyword = '') {
+            const container = document.getElementById('sidebar-history-list');
+            const countBadge = document.getElementById('history-count');
+            container.innerHTML = '';
+            
+            let names = Object.keys(savedClients).reverse(); // 后录入的在最前面
+            countBadge.innerText = names.length;
+
+            if (keyword) {
+                names = names.filter(n => n.toLowerCase().includes(keyword.toLowerCase()));
+            }
+
+            if(names.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-40 text-gray-400">
+                        <svg class="w-8 h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <p class="text-xs">暂无符合的客户</p>
+                    </div>`;
+                return;
+            }
+            
+            names.forEach(name => {
+                const data = savedClients[name];
+                
+                // 外层卡片
+                const card = document.createElement('div');
+                card.className = 'group relative p-3 bg-white border border-gray-100 rounded-lg cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-200 transition-all duration-200';
+                card.onclick = () => fillClient(name);
+
+                // 公司名
+                const title = document.createElement('h4');
+                title.className = 'text-[13px] font-bold text-gray-800 pr-7 truncate';
+                title.innerText = name;
+
+                // 辅信息(税号或联系人)
+                const sub = document.createElement('p');
+                sub.className = 'text-[11px] text-gray-500 mt-1 truncate';
+                sub.innerText = data.tax ? `税号: ${data.tax}` : (data.agent ? `联系人: ${data.agent}` : '暂无更多信息');
+
+                // 删除按钮
+                const delBtn = document.createElement('button');
+                delBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-md hover:bg-red-50 focus:outline-none';
+                delBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+                delBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    if(confirm(`确定要删除历史客户【${name}】吗？`)) {
+                        delete savedClients[name];
+                        localStorage.setItem('contract_clients', JSON.stringify(savedClients));
+                        renderSavedClients(document.getElementById('client-search').value);
+                    }
+                };
+
+                card.appendChild(title);
+                card.appendChild(sub);
+                card.appendChild(delBtn);
+                container.appendChild(card);
+            });
+        }
+
+        function filterClients() {
+            renderSavedClients(document.getElementById('client-search').value);
+        }
+
+        function saveCurrentClient() {
+            const name = document.getElementById('partyB_name').value.trim();
+            if(!name) return;
+            const client = {
+                name: name,
+                tax: document.getElementById('partyB_tax').value.trim(),
+                bank: document.getElementById('partyB_bank').value.trim(),
+                account: document.getElementById('partyB_account').value.trim(),
+                address: document.getElementById('partyB_address').value.trim(),
+                phone: document.getElementById('partyB_phone').value.trim(),
+                agent: document.getElementById('partyB_agent').value.trim()
+            };
+            savedClients[name] = client;
+            localStorage.setItem('contract_clients', JSON.stringify(savedClients));
+            // 如果不处于搜索状态才全量刷新，避免打断搜索
+            if(document.getElementById('client-search').value === '') {
+                renderSavedClients();
+            }
+        }
+
+        function fillClient(name) {
+            const data = savedClients[name];
+            if(!data) return;
+            document.getElementById('partyB_name').value = data.name || '';
+            document.getElementById('top-partyB-name').value = data.name || '';
+            document.getElementById('partyB_tax').value = data.tax || '';
+            document.getElementById('partyB_bank').value = data.bank || '';
+            document.getElementById('partyB_account').value = data.account || '';
+            
+            const addrEl = document.getElementById('partyB_address');
+            addrEl.value = data.address || '';
+            adjustTextareaHeight(addrEl);
+
+            document.getElementById('partyB_phone').value = data.phone || '';
+            document.getElementById('partyB_agent').value = data.agent || '';
+            
+            // 填入后有一个轻微的视觉反馈，不弹窗打扰
+            console.log('已填入客户:', name);
+        }
+        // =======================================================
+
 
         function openParseModal() { document.getElementById('parse-modal').classList.remove('hidden'); document.getElementById('parse-modal').classList.add('flex'); }
         function closeParseModal() { document.getElementById('parse-modal').classList.add('hidden'); document.getElementById('parse-modal').classList.remove('flex'); }
@@ -401,7 +557,72 @@
             }
             if(phoneMatch) document.getElementById('partyB_phone').value = phoneMatch[1].trim();
             if(agentMatch) document.getElementById('partyB_agent').value = agentMatch[1].trim();
+            
+            // 识别完成后自动保存到本地库
+            saveCurrentClient();
+            document.getElementById('parse-textarea').value = ''; // 清空粘贴板
             closeParseModal();
+        }
+
+        // 行明细双向自动计算逻辑
+        function calcRow(input) {
+            const row = input.closest('tr');
+            const qtyEl = row.querySelector('.qty');
+            const priceEl = row.querySelector('.price');
+            const totalEl = row.querySelector('.row-total');
+
+            const qtyStr = qtyEl.value;
+            const priceStr = priceEl.value;
+            const totalStr = totalEl.value;
+
+            const qty = parseFloat(qtyStr);
+            const price = parseFloat(priceStr);
+            const total = parseFloat(totalStr);
+
+            const isQty = input.classList.contains('qty');
+            const isPrice = input.classList.contains('price');
+            const isTotal = input.classList.contains('row-total');
+
+            if (isQty) {
+                if (qtyStr !== '' && priceStr !== '') {
+                    totalEl.value = (qty * price).toFixed(2);
+                } else if (qtyStr !== '' && totalStr !== '' && qty !== 0) {
+                    priceEl.value = Math.round(total / qty);
+                }
+            } else if (isPrice) {
+                if (qtyStr !== '' && priceStr !== '') {
+                    totalEl.value = (qty * price).toFixed(2);
+                } else if (priceStr !== '' && totalStr !== '' && price !== 0) {
+                    qtyEl.value = Math.round(total / price);
+                }
+            } else if (isTotal) {
+                if (totalStr !== '') {
+                    if (priceStr !== '' && price !== 0 && qtyStr === '') {
+                        qtyEl.value = Math.round(total / price);
+                    } else if (qtyStr !== '' && qty !== 0) {
+                        priceEl.value = Math.round(total / qty);
+                    }
+                }
+            }
+            updateGrandTotal();
+        }
+
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            let hasValue = false;
+            document.querySelectorAll('.calc-row').forEach(row => {
+                const val = parseFloat(row.querySelector('.row-total').value);
+                if (!isNaN(val)) {
+                    grandTotal += val;
+                    hasValue = true;
+                }
+            });
+            const grandTotalInput = document.getElementById('grand-total');
+            if (hasValue && grandTotal !== 0) {
+                grandTotalInput.value = amountToChinese(grandTotal) + ` (¥${grandTotal.toFixed(2)})`;
+            } else {
+                grandTotalInput.value = '';
+            }
         }
 
         function checkBlankRows() {
@@ -409,7 +630,7 @@
             let lastContentIndex = -1;
 
             rows.forEach((row, index) => {
-                const inputs = row.querySelectorAll('input:not(.row-total)');
+                const inputs = row.querySelectorAll('input');
                 let hasContent = false;
                 inputs.forEach(input => {
                     if (input.classList.contains('name-input') && input.value === '以下空白') return; 
@@ -427,9 +648,9 @@
                 newTr.innerHTML = `
                     <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
                     <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                    <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                    <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                    <td class="p-0"><input type="number" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
                     <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
                     <td class="p-0 relative">
                         <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
@@ -466,9 +687,9 @@
             newTr.innerHTML = `
                 <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
                 <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcTotal()"></td>
-                <td class="p-0"><input type="text" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none" readonly tabindex="-1"></td>
+                <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                <td class="p-0"><input type="number" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
+                <td class="p-0"><input type="number" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
                 <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
                 <td class="p-0 relative">
                     <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
@@ -489,22 +710,8 @@
                 alert("至少保留一行明细！"); return;
             }
             btn.closest('tr').remove(); 
-            calcTotal();
+            updateGrandTotal();
             checkBlankRows(); 
-        }
-
-        function calcTotal() {
-            let grandTotal = 0;
-            document.querySelectorAll('.calc-row').forEach(row => {
-                const qty = parseFloat(row.querySelector('.qty').value) || 0;
-                const price = parseFloat(row.querySelector('.price').value) || 0;
-                const totalInput = row.querySelector('.row-total');
-                const rowTotal = qty * price;
-                if(rowTotal > 0) { totalInput.value = rowTotal.toFixed(2); grandTotal += rowTotal; } 
-                else { totalInput.value = ''; }
-            });
-            const grandTotalInput = document.getElementById('grand-total');
-            grandTotalInput.value = grandTotal > 0 ? amountToChinese(grandTotal) + ` (¥${grandTotal.toFixed(2)})` : '';
         }
 
         function amountToChinese(n) {
@@ -524,6 +731,9 @@
         }
 
         function downloadPDF() {
+            // 下载前把用户可能手动输入的数据也存一下历史记录
+            saveCurrentClient();
+
             window.scrollTo(0, 0); 
             const element = document.getElementById('contract-content');
             
@@ -541,7 +751,6 @@
             html2pdf().set({
                 margin: 0, 
                 filename: `${partyAName}_${contractNo}_购销合同.pdf`,
-                // 提高图片和文字生成质量，防止印章模糊
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
