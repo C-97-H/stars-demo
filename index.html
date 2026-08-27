@@ -75,8 +75,18 @@
                     惠新发 (普票)
                 </button>
             </div>
+            <span class="text-xs text-amber-300 bg-amber-950/70 px-2.5 py-1 rounded border border-amber-600/50 flex items-center">
+                ✨ 乙方含“安徽铜陵”时自动开启发货结算条款
+            </span>
         </div>
         <div class="flex items-center gap-3">
+            <button onclick="createNewContract()" class="px-3.5 py-1.5 bg-gray-700 text-gray-200 text-sm font-bold rounded shadow-sm hover:bg-gray-600 transition flex items-center">
+                新建清空
+            </button>
+            <button onclick="openParseModal()" class="px-4 py-1.5 bg-fuchsia-600 text-white text-sm font-bold rounded shadow-sm hover:bg-fuchsia-700 transition flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                识别需方资料
+            </button>
             <button onclick="manualSaveContract()" class="px-4 py-1.5 bg-amber-600 text-white text-sm font-bold rounded shadow-sm hover:bg-amber-700 transition flex items-center">
                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                 保存合同
@@ -92,7 +102,7 @@
         </div>
     </div>
 
-    <!-- 左侧侧边栏 (带有客户库与历史合同Tab切换) -->
+    <!-- 左侧侧边栏 -->
     <aside class="no-print fixed left-0 top-[60px] bottom-0 w-[280px] bg-white shadow-[4px_0_24px_rgba(0,0,0,0.04)] border-r border-gray-200 z-40 flex flex-col">
         <!-- 选项卡头部 -->
         <div class="flex border-b border-gray-200 bg-gray-50 text-xs font-bold">
@@ -108,25 +118,21 @@
         <div class="p-3 border-b border-gray-100">
             <div class="relative">
                 <input type="text" id="sidebar-search" oninput="handleSidebarSearch()" placeholder="搜索客户或合同编号..." class="w-full bg-gray-100 text-xs rounded-md pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:bg-white transition">
-                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
         </div>
 
         <!-- 视图 1：历史客户列表区 -->
-        <div id="sidebar-clients-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50">
-            <!-- JS 动态渲染 -->
-        </div>
+        <div id="sidebar-clients-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50"></div>
 
         <!-- 视图 2：历史合同列表区 -->
-        <div id="sidebar-contracts-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50 hidden">
-            <!-- JS 动态渲染 -->
-        </div>
+        <div id="sidebar-contracts-view" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50 hidden"></div>
 
         <!-- 底部一键识别按钮 -->
         <div class="p-4 border-t border-gray-100 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
             <button onclick="openParseModal()" class="w-full py-2.5 bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-200 rounded-lg text-sm font-bold hover:bg-fuchsia-600 hover:text-white transition shadow-sm flex justify-center items-center group">
                 <svg class="w-4 h-4 mr-1.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                粘贴新客户资料
+                粘贴新需方资料
             </button>
         </div>
     </aside>
@@ -140,12 +146,12 @@
             <div class="flex justify-between text-[13px] mb-2 leading-tight">
                 <div class="flex flex-col gap-1 w-1/2">
                     <p class="flex items-end">
-                        <span class="w-12">甲方：</span>
-                        <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5">深圳市三合一五金有限公司</span>
+                        <span class="w-12 font-bold">甲方：</span>
+                        <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5 font-bold">深圳市三合一五金有限公司</span>
                     </p>
                     <p class="flex items-end">
-                        <span class="w-12">乙方：</span>
-                        <input type="text" id="top-partyB-name" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold text-indigo-900" placeholder="点击左侧客户快速填入">
+                        <span class="w-12 font-bold">乙方：</span>
+                        <input type="text" id="top-partyB-name" oninput="handlePartyBInput(this.value, 'top')" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold text-indigo-900" placeholder="点击左侧客户或识别填入">
                     </p>
                 </div>
                 <div class="flex flex-col gap-1 w-[40%]">
@@ -178,52 +184,7 @@
                     </tr>
                 </thead>
                 <tbody id="product-tbody">
-                    <!-- 初始三行 -->
-                    <tr class="h-6 calc-row group relative">
-                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0 relative">
-                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="h-6 calc-row group relative">
-                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0 relative">
-                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="h-6 calc-row group relative">
-                        <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                        <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                        <td class="p-0 relative">
-                            <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                            <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                                <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                                <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                            </div>
-                        </td>
-                    </tr>
+                    <!-- 动态生成 -->
                 </tbody>
                 <tbody>
                     <!-- 合计行 -->
@@ -236,25 +197,38 @@
                 </tbody>
             </table>
 
-            <!-- 条款 -->
-            <div class="text-[11.5px] leading-[1.3] text-justify flex-1 flex flex-col justify-between mb-1">
-                <p>第一条、质量要求技术标准：按国家标准，生产厂家有关标准执行，符合需方订单要求及技术要求。</p>
-                <p>第二条、乙方对质量负责的条件及期限：质保期 5年。</p>
-                <p>第三条、包装标准、包装物的供应与回收：包装物不回收。</p>
-                <p>第四条、随机的必备品、配件、工具数量及供应办法：符合本合同第二条规定。</p>
-                <p>第五条、合理损耗及计算方法：无。</p>
-                <p>第六条、标的物自验收合格时起交付。</p>
-                <p>第七条、交货地点、方式：需方指定地点，汽车运输。</p>
-                <p>第八条、运输及到达站（港）和费用负担：供方负责运输。</p>
-                <p>第九条、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
-                <p>第十条、设备的安装与调试：无。</p>
-                <p>第十一条、结算方式、时间及地点：<input type="text" id="delivery-days" class="w-10 border-b border-black text-center focus:outline-none text-[12px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
-                <p>第十二条、违约责任：其他按合同法执行。</p>
-                <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
-                <p>第十四条、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
-                <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
-                <p>第十六条、产品名称、金额、供货时间及数量。</p>
-                <!-- <p>第十七条、供货方应按期交付，每迟延1天，按照合同总额的1%支付违约金，总额不得超过15%；迟延超过15天的，需求方有权解除合同。需求方行使单方解除权的，供货方应当退还需求方已支付的全部费用，并向需求方支付违约金。</p> -->
+            <!-- 条款区域 (支持第11条自由开关与序号自动连续排版) -->
+            <div id="contract-clauses-container" class="text-[11.5px] leading-[1.3] text-justify flex-1 flex flex-col justify-between mb-1">
+                <p class="clause-item"><span class="clause-num">第一条</span>、质量要求技术标准：按国家标准，生产厂家有关标准执行，符合需方订单要求及技术要求。</p>
+                <p class="clause-item"><span class="clause-num">第二条</span>、乙方对质量负责的条件及期限：质保期 5年。</p>
+                <p class="clause-item"><span class="clause-num">第三条</span>、包装标准、包装物的供应与回收：包装物不回收。</p>
+                <p class="clause-item"><span class="clause-num">第四条</span>、随机的必备品、配件、工具数量及供应办法：符合本合同第二条规定。</p>
+                <p class="clause-item"><span class="clause-num">第五条</span>、合理损耗及计算方法：无。</p>
+                <p class="clause-item"><span class="clause-num">第六条</span>、标的物自验收合格时起交付。</p>
+                <p class="clause-item"><span class="clause-num">第七条</span>、交货地点、方式：需方指定地点，汽车运输。</p>
+                <p class="clause-item"><span class="clause-num">第八条</span>、运输及到达站（港）和费用负担：供方负责运输。</p>
+                <p class="clause-item"><span class="clause-num">第九条</span>、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
+                <p class="clause-item"><span class="clause-num">第十条</span>、设备的安装与调试：无。</p>
+                
+                <!-- 第十一条（可选条款：支持独立开关，遇到安徽铜陵自动开启） -->
+                <div id="clause-11-wrapper" class="relative group/clause">
+                    <p id="clause-11-content" class="clause-item bg-amber-50/40 p-0.5 rounded transition-all">
+                        <span class="clause-num">第十一条</span>、结算方式、时间及地点：<input type="text" id="delivery-days" class="w-10 border-b border-black text-center focus:outline-none text-[12px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span>
+                    </p>
+                    <!-- 悬浮控制开关（打印和PDF时不显示） -->
+                    <div class="no-print absolute -right-2 top-0 -translate-y-1/2 flex items-center gap-1.5 bg-white border border-gray-300 shadow-sm px-2 py-0.5 rounded-full text-[10px]">
+                        <label class="flex items-center cursor-pointer select-none text-gray-700 font-bold">
+                            <input type="checkbox" id="toggle-clause-11" onchange="toggleClause11(this.checked)" class="mr-1 accent-indigo-600 rounded">
+                            启用此条款
+                        </label>
+                    </div>
+                </div>
+
+                <p class="clause-item"><span class="clause-num">第十二条</span>、违约责任：其他按合同法执行。</p>
+                <p class="clause-item"><span class="clause-num">第十三条</span>、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
+                <p class="clause-item"><span class="clause-num">第十四条</span>、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
+                <p class="clause-item"><span class="clause-num">第十五条</span>、其它约定事项：本合同未尽事宜，双方协商解决。</p>
+                <p class="clause-item"><span class="clause-num">第十六条</span>、产品名称、金额、供货时间及数量。</p>
             </div>
 
             <!-- 签章区 -->
@@ -306,7 +280,7 @@
                                 <p class="font-bold mb-0.5">乙方：</p>
                                 <div class="flex items-center">
                                     <span class="w-[6.5rem]">单位名称（章）：</span>
-                                    <input type="text" id="partyB_name" oninput="document.getElementById('top-partyB-name').value=this.value" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                                    <input type="text" id="partyB_name" oninput="handlePartyBInput(this.value, 'bottom')" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium text-indigo-900">
                                 </div>
                                 <div class="flex items-start">
                                     <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
@@ -342,27 +316,34 @@
 
     <!-- 弹窗：粘贴资料识别框 -->
     <div id="parse-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center no-print backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col transform transition-all">
-            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+        <div class="bg-white rounded-xl shadow-2xl w-[90%] max-w-lg flex flex-col transform transition-all overflow-hidden">
+            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50">
                 <h3 class="text-base font-bold text-gray-800 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-fuchsia-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    智能粘贴识别
+                    智能粘贴识别需方开票资料
                 </h3>
                 <button onclick="closeParseModal()" class="text-gray-400 hover:text-red-500 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             <div class="p-5">
-                <p class="text-xs text-gray-500 mb-3">请粘贴客户全套开票资料，系统会自动提取并填入，同时<strong class="text-indigo-600">自动为您保存至历史客户库</strong>。</p>
-                <textarea id="parse-textarea" rows="6" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition shadow-inner" placeholder="在此处粘贴（支持带税号、地址、账号等杂乱文本）..."></textarea>
+                <p class="text-xs text-gray-500 mb-2 leading-relaxed">
+                    支持粘贴微信聊天记录、发票抬头、OCR复制的杂乱开票文本。<br>
+                    <span class="text-indigo-600 font-semibold">系统将自动提取名称、税号、开户行、账号、地址与联系人，并自动存入客户库。</span>
+                </p>
+                <textarea id="parse-textarea" rows="7" class="w-full border border-gray-300 rounded-lg p-3 text-xs focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition font-sans leading-relaxed" placeholder="示例：&#10;名称：安徽铜陵XX铜业制造有限公司&#10;纳税人识别号：91340700MA2XXXXXXX&#10;开户行及账号：建行铜陵支行 3405018655...&#10;地址、电话：安徽省铜陵市经济开发区... 0562-5888888"></textarea>
             </div>
-            <div class="px-5 py-4 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
-                <button onclick="closeParseModal()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-sm transition">取消</button>
-                <button onclick="executeParse()" class="px-6 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-sm font-bold shadow-md transition transform hover:scale-105">一键提取填入</button>
+            <div class="px-5 py-4 border-t bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeParseModal()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 bg-white hover:bg-gray-100 text-xs transition">取消</button>
+                <button onclick="executeParse()" class="px-6 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 text-xs font-bold shadow-md transition">一键提取填入</button>
             </div>
         </div>
     </div>
 
     <script>
+        const CHINESE_NUMS = ['零', '第一条', '第二条', '第三条', '第四条', '第五条', '第六条', '第七条', '第八条', '第九条', '第十条', 
+                              '第十一条', '第十二条', '第十三条', '第十四条', '第十五条', '第十六条', '第十七条', '第十八条', '第十九条', '第二十条'];
+
         function adjustTextareaHeight(el) {
+            if (!el) return;
             el.style.height = '18px'; 
             el.style.height = el.scrollHeight + 'px'; 
         }
@@ -398,7 +379,6 @@
             currentCompanyType = type;
             const data = companyData[type];
 
-            // 切换顶部按钮样式
             const btnSanheyi = document.getElementById('btn-company-sanheyi');
             const btnHuixinfa = document.getElementById('btn-company-huixinfa');
             if (type === 'sanheyi') {
@@ -431,8 +411,57 @@
             }
         }
 
-        window.onload = function() {
-            switchCompany('sanheyi'); 
+        // ================= 条款序号自动排版与第十一条控制 =================
+        function updateClauseNumbers() {
+            const container = document.getElementById('contract-clauses-container');
+            const visibleClauses = container.querySelectorAll('.clause-item:not(.hidden)');
+            visibleClauses.forEach((item, index) => {
+                const numSpan = item.querySelector('.clause-num');
+                if (numSpan && CHINESE_NUMS[index + 1]) {
+                    numSpan.innerText = CHINESE_NUMS[index + 1];
+                }
+            });
+        }
+
+        function toggleClause11(enable, showToast = false) {
+            const wrapper = document.getElementById('clause-11-wrapper');
+            const content = document.getElementById('clause-11-content');
+            const checkbox = document.getElementById('toggle-clause-11');
+            
+            checkbox.checked = enable;
+            if (enable) {
+                content.classList.remove('hidden');
+                wrapper.classList.remove('opacity-40');
+            } else {
+                content.classList.add('hidden');
+                wrapper.classList.add('opacity-40');
+            }
+            updateClauseNumbers();
+
+            if (showToast && enable) {
+                console.log("检测到安徽铜陵客户，已自动开启第十一条款");
+            }
+        }
+
+        // 检查乙方名称中是否含有“安徽铜陵”并自动激活条款
+        function checkPartyBForTonglingRule(name) {
+            if (!name) return;
+            // 只要名称中包含“安徽铜陵”，或者同时包含“安徽”和“铜陵”
+            if (name.includes('安徽铜陵') || (name.includes('安徽') && name.includes('铜陵')) || name.includes('铜陵')) {
+                toggleClause11(true, true);
+            }
+        }
+
+        function handlePartyBInput(value, source) {
+            if (source === 'top') {
+                document.getElementById('partyB_name').value = value;
+            } else {
+                document.getElementById('top-partyB-name').value = value;
+            }
+            checkPartyBForTonglingRule(value);
+        }
+
+        function initDateAndNo() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -442,14 +471,50 @@
 
             document.getElementById('sign-date').value = `${year}年${month}月${day}日`;
             document.getElementById('contract-no').value = `${year}${month}${day}${hour}${minute}`;
+        }
 
-            // 初始化渲染侧边栏数据
+        window.onload = function() {
+            switchCompany('sanheyi'); 
+            initDateAndNo();
+
+            // 初始化生成3行明细
+            const tbody = document.getElementById('product-tbody');
+            tbody.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                appendBlankRow(tbody);
+            }
+            
+            // 默认关闭第十一条
+            toggleClause11(false);
+
             renderSavedClients();
             renderSavedContracts();
         };
 
+        function createNewContract() {
+            if (!confirm("确定要新建清空当前合同内容吗？")) return;
+            initDateAndNo();
+            document.getElementById('top-partyB-name').value = '';
+            document.getElementById('partyB_name').value = '';
+            document.getElementById('partyB_tax').value = '';
+            document.getElementById('partyB_bank').value = '';
+            document.getElementById('partyB_account').value = '';
+            document.getElementById('partyB_address').value = '';
+            document.getElementById('partyB_phone').value = '';
+            document.getElementById('partyB_agent').value = '';
+            document.getElementById('delivery-days').value = '';
+
+            const tbody = document.getElementById('product-tbody');
+            tbody.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                appendBlankRow(tbody);
+            }
+            updateGrandTotal();
+            toggleClause11(false);
+        }
+
         // ================= 侧边栏 Tab 切换控制 =================
-        let activeTab = 'clients'; // 'clients' | 'contracts'
+        let activeTab = 'clients';
 
         function switchSidebarTab(tab) {
             activeTab = tab;
@@ -513,7 +578,7 @@
 
                 const sub = document.createElement('p');
                 sub.className = 'text-[11px] text-gray-500 mt-1 truncate';
-                sub.innerText = data.tax ? `税号: ${data.tax}` : (data.agent ? `联系人: ${data.agent}` : '暂无更多信息');
+                sub.innerText = data.tax ? `税号: ${data.tax}` : (data.agent ? `联系人: ${data.agent}` : '点击快速填入');
 
                 const delBtn = document.createElement('button');
                 delBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-md hover:bg-red-50 focus:outline-none';
@@ -566,26 +631,25 @@
 
             document.getElementById('partyB_phone').value = data.phone || '';
             document.getElementById('partyB_agent').value = data.agent || '';
+
+            checkPartyBForTonglingRule(data.name || '');
         }
 
         // ================= 历史合同保存与复原 =================
         let savedContracts = JSON.parse(localStorage.getItem('contract_records') || '{}');
 
         function saveCurrentContract() {
-            // 先保存关联的乙方客户
             saveCurrentClient();
 
             const contractNo = document.getElementById('contract-no').value.trim();
             if (!contractNo) return;
 
-            // 提取所有明细行
             const items = [];
             document.querySelectorAll('#product-tbody .calc-row').forEach(row => {
                 const inputs = row.querySelectorAll('input');
                 const name = inputs[0].value.trim();
                 const qty = inputs[2].value;
                 const total = inputs[4].value;
-                // 如果有内容则保存
                 if (name || qty || total) {
                     items.push({
                         name: inputs[0].value,
@@ -604,6 +668,7 @@
                 companyType: currentCompanyType,
                 signDate: document.getElementById('sign-date').value,
                 deliveryDays: document.getElementById('delivery-days').value,
+                enableClause11: document.getElementById('toggle-clause-11').checked,
                 partyB: {
                     name: document.getElementById('partyB_name').value,
                     tax: document.getElementById('partyB_tax').value,
@@ -624,7 +689,7 @@
 
         function manualSaveContract() {
             saveCurrentContract();
-            alert('✅ 当前合同已保存在左侧【历史合同】中！点击随时可加载修改。');
+            alert('✅ 当前合同已保存在左侧【历史合同】中！');
         }
 
         function renderSavedContracts(keyword = '') {
@@ -689,13 +754,11 @@
             const contract = savedContracts[contractNo];
             if (!contract) return;
 
-            // 恢复公司主体及基础信息
             switchCompany(contract.companyType || 'sanheyi');
             document.getElementById('contract-no').value = contract.contractNo || '';
             document.getElementById('sign-date').value = contract.signDate || '';
             document.getElementById('delivery-days').value = contract.deliveryDays || '';
 
-            // 恢复乙方信息
             if (contract.partyB) {
                 document.getElementById('partyB_name').value = contract.partyB.name || '';
                 document.getElementById('top-partyB-name').value = contract.partyB.name || '';
@@ -709,73 +772,148 @@
                 document.getElementById('partyB_agent').value = contract.partyB.agent || '';
             }
 
-            // 清空并重新生成表格明细
+            // 恢复第十一条开启状态
+            toggleClause11(contract.enableClause11 ?? false);
+            checkPartyBForTonglingRule(contract.partyB?.name || '');
+
             const tbody = document.getElementById('product-tbody');
             tbody.innerHTML = '';
 
             const items = contract.items && contract.items.length > 0 ? contract.items : [{}, {}, {}];
             items.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = 'h-6 calc-row group relative';
-                tr.innerHTML = `
-                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.name || ''}"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.unit || ''}"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.qty || ''}" oninput="calcRow(this)"></td>
-                    <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.price ? parseFloat(item.price).toFixed(2) : ''}" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                    <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" value="${item.total ? parseFloat(item.total).toFixed(2) : ''}" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.period || ''}"></td>
-                    <td class="p-0 relative">
-                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${item.remark || ''}">
-                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                appendBlankRow(tbody, item);
             });
+
+            while(tbody.querySelectorAll('.calc-row').length < 3) {
+                appendBlankRow(tbody);
+            }
 
             updateGrandTotal();
             checkBlankRows();
         }
 
-        // ================= 智能识别与弹窗控制 =================
+        // ================= 升级增强版：智能识别需方资料 =================
         function openParseModal() { document.getElementById('parse-modal').classList.remove('hidden'); document.getElementById('parse-modal').classList.add('flex'); }
         function closeParseModal() { document.getElementById('parse-modal').classList.add('hidden'); document.getElementById('parse-modal').classList.remove('flex'); }
         
         function executeParse() {
             const text = document.getElementById('parse-textarea').value;
-            if(!text) return closeParseModal();
-            const nameMatch = text.match(/(?:公司名称|名称|全称)[:：\s]*([^\n]+)/) || text.match(/^([^\n]+公司)/);
-            const taxMatch = text.match(/(?:纳税人识别号|税号|统一社会信用代码)[:：\s]*([a-zA-Z0-9]{15,18})/);
-            const bankMatch = text.match(/(?:开户行|行号|银行|开户银行)[:：\s]*([^\n]+)/);
-            const accountMatch = text.match(/(?:账号|帐号)[:：\s]*([\d\s\-]{8,})/);
-            const addressMatch = text.match(/(?:地址|厂址|公司地址)[:：\s]*([^\n]+)/);
-            const phoneMatch = text.match(/(?:电话|联系电话|公司电话|手机)[:：\s]*([0-9\-\s]{7,})/);
-            const agentMatch = text.match(/(?:法定代表人|代表人|委托代理人|联系人)[:：\s]*([^\n\s]+)/);
+            if(!text.trim()) return closeParseModal();
 
-            if(nameMatch) { document.getElementById('partyB_name').value = nameMatch[1].trim(); document.getElementById('top-partyB-name').value = nameMatch[1].trim(); }
-            if(taxMatch) document.getElementById('partyB_tax').value = taxMatch[1].trim();
-            if(bankMatch) document.getElementById('partyB_bank').value = bankMatch[1].trim();
-            if(accountMatch) document.getElementById('partyB_account').value = accountMatch[1].replace(/\s/g,'').trim();
-            if(addressMatch) {
+            // 1. 公司名称匹配
+            const nameMatch = text.match(/(?:公司名称|单位名称|名称|全称|抬头|购方名称|乙方)[:：\s]*([^\n\r,，。]+)/i) 
+                           || text.match(/^([^\n\r]+(?:公司|商行|企业|厂|店|合作社|集团))/m);
+
+            // 2. 税号 / 统一社会信用代码匹配
+            const taxMatch = text.match(/(?:纳税人识别号|信用代码|统一社会信用代码|税号|税\s*号)[:：\s]*([a-zA-Z0-9]{15,20})/i)
+                          || text.match(/\b([0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10})\b/);
+
+            // 3. 开户行与账号（深度支持“开户行及账号：建行东莞双岗支行 4405018...”等合并写法）
+            let bank = "", account = "";
+            const bankAccountCombined = text.match(/(?:开户行及账号|开户银行及账号|银行及账号|开户行\/账号|银行账号)[:：\s]*([^\n\r]+)/i);
+            if (bankAccountCombined) {
+                const rawCombined = bankAccountCombined[1].trim();
+                const tokens = rawCombined.split(/[\s,，]+/);
+                if (tokens.length >= 2) {
+                    bank = tokens[0];
+                    account = tokens.slice(1).join('').replace(/[\s-]/g, '');
+                } else {
+                    const accFound = rawCombined.match(/\d{10,}/);
+                    if (accFound) {
+                        account = accFound[0];
+                        bank = rawCombined.replace(accFound[0], '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+                    } else {
+                        bank = rawCombined;
+                    }
+                }
+            }
+
+            if (!bank) {
+                const bankMatch = text.match(/(?:开户行|行号|银行|开户银行|开户网点)[:：\s]*([^\n\r,，。]+)/i);
+                if (bankMatch) bank = bankMatch[1].trim();
+            }
+            if (!account) {
+                const accountMatch = text.match(/(?:账号|帐号|银行卡号)[:：\s]*([\d\s\-]{8,30})/i);
+                if (accountMatch) account = accountMatch[1].replace(/[\s-]/g,'').trim();
+            }
+
+            // 4. 地址与电话（深度支持“地址、电话：深圳市龙岗区... 0755-12345678”等合并写法）
+            let address = "", phone = "", agent = "";
+            const addrPhoneCombined = text.match(/(?:地址、电话|地址及电话|公司地址电话|地址\/电话|注册地址电话)[:：\s]*([^\n\r]+)/i);
+            if (addrPhoneCombined) {
+                const rawAddrPhone = addrPhoneCombined[1].trim();
+                const pMatch = rawAddrPhone.match(/(?:1[3-9]\d{9}|0\d{2,3}[- ]?\d{7,8})/);
+                if (pMatch) {
+                    phone = pMatch[0];
+                    address = rawAddrPhone.replace(pMatch[0], '').replace(/[\s,，、]+$/, '').trim();
+                } else {
+                    address = rawAddrPhone;
+                }
+            }
+
+            if (!address) {
+                const addressMatch = text.match(/(?:地址|厂址|公司地址|注册地址|注册地)[:：\s]*([^\n\r]+)/i);
+                if (addressMatch) address = addressMatch[1].trim();
+            }
+            if (!phone) {
+                const phoneMatch = text.match(/(?:联系电话|公司电话|手机|电话|手机号码|TEL)[:：\s]*([0-9\-\s]{7,20})/i);
+                if (phoneMatch) phone = phoneMatch[1].trim();
+            }
+
+            // 5. 法人代表/委托代理人/联系人
+            const agentMatch = text.match(/(?:法定代表人|代表人|委托代理人|代理人|联系人|业务员)[:：\s]*([^\n\r\s,，。]+)/i);
+            if (agentMatch) agent = agentMatch[1].trim();
+
+            // 赋值填入
+            const companyName = nameMatch ? nameMatch[1].replace(/^[：:\s]+/, '').trim() : '';
+            if (companyName) {
+                document.getElementById('partyB_name').value = companyName;
+                document.getElementById('top-partyB-name').value = companyName;
+                checkPartyBForTonglingRule(companyName);
+            }
+            if (taxMatch) document.getElementById('partyB_tax').value = taxMatch[1].trim();
+            if (bank) document.getElementById('partyB_bank').value = bank;
+            if (account) document.getElementById('partyB_account').value = account;
+            if (address) {
                 const bAddrEl = document.getElementById('partyB_address');
-                bAddrEl.value = addressMatch[1].trim();
+                bAddrEl.value = address;
                 adjustTextareaHeight(bAddrEl);
             }
-            if(phoneMatch) document.getElementById('partyB_phone').value = phoneMatch[1].trim();
-            if(agentMatch) document.getElementById('partyB_agent').value = agentMatch[1].trim();
+            if (phone) document.getElementById('partyB_phone').value = phone;
+            if (agent) document.getElementById('partyB_agent').value = agent;
             
             saveCurrentClient();
             document.getElementById('parse-textarea').value = '';
             closeParseModal();
         }
 
-        // ================= 格式化与计算逻辑（全面2位小数） =================
+        // ================= 格式化与计算逻辑 =================
         function formatDecimal(input) {
-            if (input.value !== '' && !isNaN(parseFloat(input.value))) {
-                input.value = parseFloat(input.value).toFixed(2);
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) {
+                input.value = val.toFixed(2);
             }
+        }
+
+        function appendBlankRow(tbody, data = {}) {
+            const tr = document.createElement('tr');
+            tr.className = 'h-6 calc-row group relative';
+            tr.innerHTML = `
+                <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.name || ''}"></td>
+                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.unit || ''}"></td>
+                <td class="p-0"><input type="number" step="any" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50 font-sans" value="${data.qty || ''}" oninput="calcRow(this)"></td>
+                <td class="p-0"><input type="number" step="any" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50 font-sans" value="${data.price ? parseFloat(data.price).toFixed(2) : ''}" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
+                <td class="p-0"><input type="number" step="any" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50 font-sans" value="${data.total ? parseFloat(data.total).toFixed(2) : ''}" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
+                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.period || ''}"></td>
+                <td class="p-0 relative">
+                    <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.remark || ''}">
+                    <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                        <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
+                        <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
         }
 
         function calcRow(input) {
@@ -806,12 +944,12 @@
                 if (qtyStr !== '' && priceStr !== '') {
                     totalEl.value = (qty * price).toFixed(2);
                 } else if (priceStr !== '' && totalStr !== '' && price !== 0) {
-                    qtyEl.value = Math.round(total / price);
+                    qtyEl.value = (total / price).toFixed(2);
                 }
             } else if (isTotal) {
                 if (totalStr !== '') {
                     if (priceStr !== '' && price !== 0 && qtyStr === '') {
-                        qtyEl.value = Math.round(total / price);
+                        qtyEl.value = (total / price).toFixed(2);
                     } else if (qtyStr !== '' && qty !== 0) {
                         priceEl.value = (total / qty).toFixed(2);
                     }
@@ -830,6 +968,7 @@
                     hasValue = true;
                 }
             });
+            grandTotal = Math.round(grandTotal * 100) / 100;
             const grandTotalInput = document.getElementById('grand-total');
             if (hasValue && grandTotal !== 0) {
                 grandTotalInput.value = amountToChinese(grandTotal) + ` (¥${grandTotal.toFixed(2)})`;
@@ -855,25 +994,7 @@
             });
 
             if (lastContentIndex === rows.length - 1) {
-                const tbody = document.getElementById('product-tbody');
-                const newTr = document.createElement('tr');
-                newTr.className = 'h-6 calc-row group relative';
-                newTr.innerHTML = `
-                    <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
-                    <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                    <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                    <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                    <td class="p-0 relative">
-                        <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                        <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                            <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                            <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(newTr);
+                appendBlankRow(document.getElementById('product-tbody'));
                 setTimeout(checkBlankRows, 10); 
                 return; 
             }
@@ -895,23 +1016,9 @@
 
         function addRow(btn) {
             const tr = btn.closest('tr');
-            const newTr = document.createElement('tr');
-            newTr.className = 'h-6 calc-row group relative';
-            newTr.innerHTML = `
-                <td class="p-0"><input type="text" class="name-input w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                <td class="p-0"><input type="number" class="qty w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)"></td>
-                <td class="p-0"><input type="number" step="0.01" class="price w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                <td class="p-0"><input type="number" step="0.01" class="row-total w-full h-full px-1 text-center font-bold text-gray-700 bg-gray-50 focus:outline-none focus:bg-yellow-50" oninput="calcRow(this)" onblur="formatDecimal(this)"></td>
-                <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50"></td>
-                <td class="p-0 relative">
-                    <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50">
-                    <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
-                        <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
-                        <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
-                    </div>
-                </td>
-            `;
+            const tbody = document.getElementById('product-tbody');
+            appendBlankRow(tbody);
+            const newTr = tbody.lastElementChild;
             tr.after(newTr); 
             const firstInput = newTr.querySelector('.name-input');
             if (firstInput) firstInput.focus();
@@ -927,26 +1034,74 @@
             checkBlankRows(); 
         }
 
-        function amountToChinese(n) {
-            const fraction =['角', '分'];
-            const digit =['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
-            const unit = [['元', '万', '亿'],['', '拾', '佰', '仟']];
-            const head = n < 0 ? '欠' : '';
-            n = Math.abs(n); let s = '';
-            for (let i = 0; i < fraction.length; i++) s += (digit[Math.floor(n * 10 * Math.pow(10, i)) % 10] + fraction[i]).replace(/零./, '');
-            s = s || '整'; n = Math.floor(n);
-            for (let i = 0; i < unit[0].length && n > 0; i++) {
-                let p = '';
-                for (let j = 0; j < unit[1].length && n > 0; j++) { p = digit[n % 10] + unit[1][j] + p; n = Math.floor(n / 10); }
-                s = p.replace(/(零.)*零$/, '').replace(/^$/, '零') + unit[0][i] + s;
+        // 精确中文大写转换
+        function amountToChinese(amount) {
+            if (isNaN(amount) || amount === 0) return '零元整';
+            const cnDigits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+            const cnUnits = ['', '拾', '佰', '仟'];
+            const cnBigUnits = ['', '万', '亿', '兆'];
+            const cnDecUnits = ['角', '分'];
+            
+            let prefix = amount < 0 ? '负' : '';
+            amount = Math.abs(amount);
+            
+            let integral = Math.floor(Math.round(amount * 100) / 100);
+            let decimal = Math.round((amount - integral) * 100);
+            let output = '';
+            
+            if (integral > 0) {
+                let zeroCount = 0;
+                let intStr = integral.toString();
+                let len = intStr.length;
+                let bigUnitIndex = 0;
+                
+                for (let i = 0; i < len; i += 4) {
+                    let section = intStr.slice(Math.max(0, len - i - 4), len - i);
+                    let sectionStr = '';
+                    let secZero = 0;
+                    
+                    for (let j = 0; j < section.length; j++) {
+                        let num = parseInt(section[j]);
+                        let unitIdx = section.length - 1 - j;
+                        
+                        if (num === 0) {
+                            secZero++;
+                        } else {
+                            if (secZero > 0) {
+                                sectionStr += cnDigits[0];
+                                secZero = 0;
+                            }
+                            sectionStr += cnDigits[num] + cnUnits[unitIdx];
+                        }
+                    }
+                    if (sectionStr !== '') {
+                        output = sectionStr + cnBigUnits[bigUnitIndex] + output;
+                    }
+                    bigUnitIndex++;
+                }
+                output += '元';
             }
-            return head + s.replace(/(零.)*零元/, '元').replace(/(零.)+/g, '零').replace(/^整$/, '零元整');
+            
+            if (decimal > 0) {
+                let jiao = Math.floor(decimal / 10);
+                let fen = decimal % 10;
+                if (jiao > 0) {
+                    output += cnDigits[jiao] + cnDecUnits[0];
+                } else if (integral > 0 && fen > 0) {
+                    output += cnDigits[0];
+                }
+                if (fen > 0) {
+                    output += cnDigits[fen] + cnDecUnits[1];
+                }
+            } else {
+                output += '整';
+            }
+            return prefix + output;
         }
 
+        // ================= PDF 导出 =================
         function downloadPDF() {
-            // 下载 PDF 前自动保存整个合同和客户信息
             saveCurrentContract();
-
             window.scrollTo(0, 0); 
             const element = document.getElementById('contract-content');
             
