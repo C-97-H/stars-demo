@@ -76,7 +76,7 @@
                 </button>
             </div>
             <span class="text-xs text-amber-300 bg-amber-950/70 px-2.5 py-1 rounded border border-amber-600/50 flex items-center">
-                ✨ 乙方含“安徽铜陵”时自动开启第十七条违约金条款
+                ✨ 乙方含“安徽铜陵”即时自动勾选第十七条，去掉任一字即时取消
             </span>
         </div>
         <div class="flex items-center gap-3">
@@ -204,8 +204,8 @@
                 <p>第九条、验收标准、方法，地点及期限：按本合同第二条规定验收。</p>
                 <p>第十条、设备的安装与调试：无。</p>
                 
-                <!-- 第十一条（固定常显条款） -->
-                <p>第十一条、结算方式、时间及地点：<input type="text" id="delivery-days" class="w-10 border-b border-black text-center focus:outline-none text-[11px]">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
+                <!-- 第十一条（固定常显条款，默认7天） -->
+                <p>第十一条、结算方式、时间及地点：<input type="text" id="delivery-days" value="7" class="w-10 border-b border-black text-center focus:outline-none text-[11px] font-bold">个工作日内发货 付款方式：<span class="underline underline-offset-2">现金对公帐号（先付款后加工）。</span></p>
 
                 <p>第十二条、违约责任：其他按合同法执行。</p>
                 <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
@@ -213,7 +213,7 @@
                 <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
                 <p>第十六条、产品名称、金额、供货时间及数量。</p>
 
-                <!-- 第十七条（违约金条款：支持独立开关控制，遇到安徽铜陵自动开启） -->
+                <!-- 第十七条（违约金条款：支持即时开关，遇到“安徽铜陵”四字自动勾选，去字即时取消） -->
                 <div id="clause-17-wrapper" class="relative group/clause">
                     <p id="clause-17-content" class="hidden text-gray-800 bg-amber-50/50 px-0.5 rounded transition-all">
                         第十七条、供货方应按期交付，每迟延1天，按照合同总额的1%支付违约金，总额不得超过15%；迟延超过15天的，需求方有权解除合同。需求方行使单方解除权的，供货方应当退还需求方已支付的全部费用，并向需求方支付违约金。
@@ -418,12 +418,10 @@
             }
         }
 
-        // 检查乙方名称中是否含有“安徽铜陵”并自动激活第十七条
+        // 严格检测“安徽铜陵”四个字：有则勾选开启，缺少任何字即时取消勾选
         function checkPartyBForTonglingRule(name) {
-            if (!name) return;
-            if (name.includes('安徽铜陵') || (name.includes('安徽') && name.includes('铜陵')) || name.includes('铜陵')) {
-                toggleClause17(true);
-            }
+            const isMatch = typeof name === 'string' && name.includes('安徽铜陵');
+            toggleClause17(isMatch);
         }
 
         function handlePartyBInput(value, source) {
@@ -458,7 +456,8 @@
                 appendBlankRow(tbody);
             }
             
-            // 默认关闭第十七条
+            // 默认7天发货，默认关闭第十七条
+            document.getElementById('delivery-days').value = '7';
             toggleClause17(false);
 
             renderSavedClients();
@@ -476,7 +475,7 @@
             document.getElementById('partyB_address').value = '';
             document.getElementById('partyB_phone').value = '';
             document.getElementById('partyB_agent').value = '';
-            document.getElementById('delivery-days').value = '';
+            document.getElementById('delivery-days').value = '7';
 
             const tbody = document.getElementById('product-tbody');
             tbody.innerHTML = '';
@@ -641,7 +640,7 @@
                 contractNo: contractNo,
                 companyType: currentCompanyType,
                 signDate: document.getElementById('sign-date').value,
-                deliveryDays: document.getElementById('delivery-days').value,
+                deliveryDays: document.getElementById('delivery-days').value || '7',
                 enableClause17: document.getElementById('toggle-clause-17').checked,
                 partyB: {
                     name: document.getElementById('partyB_name').value,
@@ -731,7 +730,7 @@
             switchCompany(contract.companyType || 'sanheyi');
             document.getElementById('contract-no').value = contract.contractNo || '';
             document.getElementById('sign-date').value = contract.signDate || '';
-            document.getElementById('delivery-days').value = contract.deliveryDays || '';
+            document.getElementById('delivery-days').value = contract.deliveryDays || '7';
 
             if (contract.partyB) {
                 document.getElementById('partyB_name').value = contract.partyB.name || '';
@@ -748,7 +747,9 @@
 
             // 恢复第十七条开启状态
             toggleClause17(contract.enableClause17 ?? false);
-            checkPartyBForTonglingRule(contract.partyB?.name || '');
+            if (contract.partyB && contract.partyB.name) {
+                checkPartyBForTonglingRule(contract.partyB.name);
+            }
 
             const tbody = document.getElementById('product-tbody');
             tbody.innerHTML = '';
