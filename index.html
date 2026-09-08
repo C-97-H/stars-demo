@@ -151,7 +151,7 @@
                 <div class="flex flex-col gap-1 w-[40%]">
                     <p class="flex items-end">
                         <span class="w-20 text-right">签订地点：</span>
-                        <span class="flex-1 border-b border-gray-500 pb-0.5">江西九江</span>
+                        <input type="text" id="sign-place" value="广东深圳" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none">
                     </p>
                     <p class="flex items-end">
                         <span class="w-20 text-right">签订时间：</span>
@@ -467,6 +467,7 @@
         function createNewContract() {
             if (!confirm("确定要新建清空当前合同内容吗？")) return;
             initDateAndNo();
+            document.getElementById('sign-place').value = '广东深圳';
             document.getElementById('top-partyB-name').value = '';
             document.getElementById('partyB_name').value = '';
             document.getElementById('partyB_tax').value = '';
@@ -639,6 +640,7 @@
             const contractRecord = {
                 contractNo: contractNo,
                 companyType: currentCompanyType,
+                signPlace: document.getElementById('sign-place').value || '广东深圳',
                 signDate: document.getElementById('sign-date').value,
                 deliveryDays: document.getElementById('delivery-days').value || '7',
                 enableClause17: document.getElementById('toggle-clause-17').checked,
@@ -729,6 +731,7 @@
 
             switchCompany(contract.companyType || 'sanheyi');
             document.getElementById('contract-no').value = contract.contractNo || '';
+            document.getElementById('sign-place').value = contract.signPlace || '广东深圳';
             document.getElementById('sign-date').value = contract.signDate || '';
             document.getElementById('delivery-days').value = contract.deliveryDays || '7';
 
