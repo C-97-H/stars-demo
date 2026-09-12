@@ -159,7 +159,7 @@
                     </p>
                     <p class="flex items-end">
                         <span class="w-20 text-right">合同编号：</span>
-                        <input type="text" id="contract-no" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold">
+                        <input type="text" id="contract-no" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none text-blue-800 font-bold cursor-help" placeholder="自动生成编号">
                     </p>
                 </div>
             </div>
@@ -433,16 +433,25 @@
             checkPartyBForTonglingRule(value);
         }
 
-        function initDateAndNo() {
+        function getFormattedCurrentDateTime() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
+            return {
+                dateStr: `${year}年${month}月${day}日`,
+                contractNo: `${year}${month}${day}${hour}${minute}`
+            };
+        }
 
-            document.getElementById('sign-date').value = `${year}年${month}月${day}日`;
-            document.getElementById('contract-no').value = `${year}${month}${day}${hour}${minute}`;
+        function initDateAndNo() {
+            const { dateStr, contractNo } = getFormattedCurrentDateTime();
+            document.getElementById('sign-date').value = dateStr;
+            const contractNoInput = document.getElementById('contract-no');
+            contractNoInput.value = contractNo;
+            contractNoInput.title = ''; // 清除原合同提示
         }
 
         window.onload = function() {
@@ -725,14 +734,25 @@
             });
         }
 
+        // ================= 点击历史合同加载：自动生成最新编号，悬停显示历史编号 =================
         function loadContract(contractNo) {
             const contract = savedContracts[contractNo];
             if (!contract) return;
 
             switchCompany(contract.companyType || 'sanheyi');
-            document.getElementById('contract-no').value = contract.contractNo || '';
+
+            // 1. 获取最新当前时间及编号
+            const { dateStr, contractNo: latestNo } = getFormattedCurrentDateTime();
+            
+            // 2. 合同编号按最新时间生成，并设置悬停 title 提示原合同编号
+            const contractNoInput = document.getElementById('contract-no');
+            contractNoInput.value = latestNo;
+            const originalNo = contract.contractNo || contractNo;
+            contractNoInput.title = `原历史合同编号：${originalNo}`;
+
+            // 3. 签订时间同步更新为当前最新时间
+            document.getElementById('sign-date').value = dateStr;
             document.getElementById('sign-place').value = contract.signPlace || '广东深圳';
-            document.getElementById('sign-date').value = contract.signDate || '';
             document.getElementById('delivery-days').value = contract.deliveryDays || '7';
 
             if (contract.partyB) {
