@@ -69,10 +69,10 @@
             <h1 class="text-white font-bold text-lg tracking-widest mr-4">合同生成系统</h1>
             <div class="flex bg-gray-700 rounded overflow-hidden shadow-sm">
                 <button id="btn-company-sanheyi" onclick="switchCompany('sanheyi')" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition border-r border-indigo-800">
-                    三合一 (专票)
+                    三合一 (专票13%)
                 </button>
                 <button id="btn-company-huixinfa" onclick="switchCompany('huixinfa')" class="px-4 py-1.5 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition">
-                    惠新发 (普票)
+                    惠新发 (普票1%)
                 </button>
             </div>
             <span class="text-xs text-amber-300 bg-amber-950/70 px-2.5 py-1 rounded border border-amber-600/50 flex items-center">
@@ -171,8 +171,8 @@
                         <th class="p-1">名 称</th>
                         <th class="p-1 w-12">单位</th>
                         <th class="p-1 w-16">数量</th>
-                        <th class="p-1 w-20">含13%税单价</th>
-                        <th class="p-1 w-24">含13%税合计</th>
+                        <th id="th-price-tax" class="p-1 w-20">含13%税单价</th>
+                        <th id="th-total-tax" class="p-1 w-24">含13%税合计</th>
                         <th class="p-1 w-20">交付周期</th>
                         <th class="p-1 w-24">备 注</th>
                     </tr>
@@ -353,6 +353,8 @@
                 address: '深圳市龙岗区宝龙街道南约社区高科大道56号万达工业园1号厂房301G',
                 phone: '0755-28262135',
                 taxText: '（含13%增值税）及运费',
+                priceHeader: '含13%税单价',
+                totalHeader: '含13%税合计',
                 showSeal: true, 
                 sealSrc: './seal.png' 
             },
@@ -363,7 +365,9 @@
                 account: '000106704608',
                 address: '深圳市龙岗区宝龙街道高科大道万达科技园56号1号厂房',
                 phone: '0755-28262135',
-                taxText: '含普通发票及运费',
+                taxText: '（含1%增值税）及运费',
+                priceHeader: '含1%税单价',
+                totalHeader: '含1%税合计',
                 showSeal: true, 
                 sealSrc: './seal_custom.png' 
             }
@@ -394,7 +398,11 @@
             setTimeout(() => adjustTextareaHeight(addrEl), 0);
             
             document.getElementById('partyA_phone').value = data.phone;
+            
+            // 联动更新税率文字及表格表头
             document.getElementById('tax-term-text').innerText = data.taxText;
+            document.getElementById('th-price-tax').innerText = data.priceHeader;
+            document.getElementById('th-total-tax').innerText = data.totalHeader;
 
             const sealImg = document.getElementById('partyA_seal');
             if (data.showSeal) {
@@ -451,21 +459,19 @@
             document.getElementById('sign-date').value = dateStr;
             const contractNoInput = document.getElementById('contract-no');
             contractNoInput.value = contractNo;
-            contractNoInput.title = ''; // 清除原合同提示
+            contractNoInput.title = ''; 
         }
 
         window.onload = function() {
             switchCompany('sanheyi'); 
             initDateAndNo();
 
-            // 初始化生成3行明细
             const tbody = document.getElementById('product-tbody');
             tbody.innerHTML = '';
             for(let i=0; i<3; i++) {
                 appendBlankRow(tbody);
             }
             
-            // 默认7天发货，默认关闭第十七条
             document.getElementById('delivery-days').value = '7';
             toggleClause17(false);
 
@@ -741,16 +747,13 @@
 
             switchCompany(contract.companyType || 'sanheyi');
 
-            // 1. 获取最新当前时间及编号
             const { dateStr, contractNo: latestNo } = getFormattedCurrentDateTime();
             
-            // 2. 合同编号按最新时间生成，并设置悬停 title 提示原合同编号
             const contractNoInput = document.getElementById('contract-no');
             contractNoInput.value = latestNo;
             const originalNo = contract.contractNo || contractNo;
             contractNoInput.title = `原历史合同编号：${originalNo}`;
 
-            // 3. 签订时间同步更新为当前最新时间
             document.getElementById('sign-date').value = dateStr;
             document.getElementById('sign-place').value = contract.signPlace || '广东深圳';
             document.getElementById('delivery-days').value = contract.deliveryDays || '7';
@@ -768,7 +771,6 @@
                 document.getElementById('partyB_agent').value = contract.partyB.agent || '';
             }
 
-            // 恢复第十七条开启状态
             toggleClause17(contract.enableClause17 ?? false);
             if (contract.partyB && contract.partyB.name) {
                 checkPartyBForTonglingRule(contract.partyB.name);
@@ -798,15 +800,12 @@
             const text = document.getElementById('parse-textarea').value;
             if(!text.trim()) return closeParseModal();
 
-            // 1. 公司名称
             const nameMatch = text.match(/(?:公司名称|单位名称|名称|全称|抬头|购方名称|乙方)[:：\s]*([^\n\r,，。]+)/i) 
                            || text.match(/^([^\n\r]+(?:公司|商行|企业|厂|店|合作社|集团))/m);
 
-            // 2. 税号
             const taxMatch = text.match(/(?:纳税人识别号|信用代码|统一社会信用代码|税号|税\s*号)[:：\s]*([a-zA-Z0-9]{15,20})/i)
                           || text.match(/\b([0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10})\b/);
 
-            // 3. 开户行与账号
             let bank = "", account = "";
             const bankAccountCombined = text.match(/(?:开户行及账号|开户银行及账号|银行及账号|开户行\/账号|银行账号)[:：\s]*([^\n\r]+)/i);
             if (bankAccountCombined) {
@@ -835,7 +834,6 @@
                 if (accountMatch) account = accountMatch[1].replace(/[\s-]/g,'').trim();
             }
 
-            // 4. 地址与电话
             let address = "", phone = "", agent = "";
             const addrPhoneCombined = text.match(/(?:地址、电话|地址及电话|公司地址电话|地址\/电话|注册地址电话)[:：\s]*([^\n\r]+)/i);
             if (addrPhoneCombined) {
@@ -858,7 +856,6 @@
                 if (phoneMatch) phone = phoneMatch[1].trim();
             }
 
-            // 5. 法人代表 / 代理人 / 联系人
             const agentMatch = text.match(/(?:法定代表人|代表人|委托代理人|代理人|联系人|业务员)[:：\s]*([^\n\r\s,，。]+)/i);
             if (agentMatch) agent = agentMatch[1].trim();
 
@@ -1031,7 +1028,6 @@
             checkBlankRows(); 
         }
 
-        // 精确中文大写金额算法
         function amountToChinese(amount) {
             if (isNaN(amount) || amount === 0) return '零元整';
             const cnDigits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
