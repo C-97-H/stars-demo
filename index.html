@@ -55,6 +55,7 @@
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
+            #clause-17-content { background-color: transparent !important; }
             input::placeholder, textarea::placeholder { color: transparent !important; }
             .a4-paper { box-shadow: none; margin: 0; width: 100%; min-height: 100%; padding: 10mm; }
             @page { size: A4 portrait; margin: 0; }
@@ -218,8 +219,8 @@
                     <p id="clause-17-content" class="hidden text-gray-800 bg-amber-50/50 px-0.5 rounded transition-all">
                         第十七条、供货方应按期交付，每迟延1天，按照合同总额的1%支付违约金，总额不得超过15%；迟延超过15天的，需求方有权解除合同。需求方行使单方解除权的，供货方应当退还需求方已支付的全部费用，并向需求方支付违约金。
                     </p>
-                    <!-- 悬浮控制开关（打印和PDF时不显示） -->
-                    <div class="no-print absolute -right-2 top-0 -translate-y-1/2 flex items-center gap-1.5 bg-white border border-gray-300 shadow-sm px-2 py-0.5 rounded-full text-[10px]">
+                    <!-- 悬浮控制开关（通过 data-html2canvas-ignore 与 no-print 双重拦截，导出PDF/打印绝不显示） -->
+                    <div data-html2canvas-ignore="true" class="no-print absolute -right-2 top-0 -translate-y-1/2 flex items-center gap-1.5 bg-white border border-gray-300 shadow-sm px-2 py-0.5 rounded-full text-[10px]">
                         <label class="flex items-center cursor-pointer select-none text-gray-700 font-bold">
                             <input type="checkbox" id="toggle-clause-17" onchange="toggleClause17(this.checked)" class="mr-1 accent-indigo-600 rounded">
                             启用第十七条(违约金)
@@ -387,7 +388,6 @@
                 btnSanheyi.className = 'px-4 py-1.5 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition border-r border-indigo-800';
             }
 
-            // 赋值到乙方
             document.getElementById('top-partyB-name').innerText = data.name;
             document.getElementById('partyB_name').value = data.name;
             document.getElementById('partyB_tax').value = data.tax;
@@ -400,7 +400,6 @@
             
             document.getElementById('partyB_phone').value = data.phone;
             
-            // 联动更新税率文字及表格表头
             document.getElementById('tax-term-text').innerText = data.taxText;
             document.getElementById('th-price-tax').innerText = data.priceHeader;
             document.getElementById('th-total-tax').innerText = data.totalHeader;
@@ -427,7 +426,6 @@
             }
         }
 
-        // 严格检测“安徽铜陵”四个字：有则勾选开启，缺少任何字即时取消勾选
         function checkPartyAForTonglingRule(name) {
             const isMatch = typeof name === 'string' && name.includes('安徽铜陵');
             toggleClause17(isMatch);
@@ -743,7 +741,6 @@
             });
         }
 
-        // ================= 点击历史合同加载：自动生成最新编号，悬停显示历史编号 =================
         function loadContract(contractNo) {
             const contract = savedContracts[contractNo];
             if (!contract) return;
@@ -761,7 +758,6 @@
             document.getElementById('sign-place').value = contract.signPlace || '广东深圳';
             document.getElementById('delivery-days').value = contract.deliveryDays || '7';
 
-            // 兼容之前保存的甲方或乙方数据
             const partyData = contract.partyA || contract.partyB;
             if (partyData) {
                 document.getElementById('partyA_name').value = partyData.name || '';
@@ -906,7 +902,7 @@
                 <td class="p-0"><input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.period || ''}"></td>
                 <td class="p-0 relative">
                     <input type="text" class="w-full h-full px-1 text-center focus:outline-none focus:bg-yellow-50" value="${data.remark || ''}">
-                    <div class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
+                    <div data-html2canvas-ignore="true" class="absolute -right-7 top-0 hidden group-hover:flex no-print gap-1 z-10">
                         <button type="button" onclick="addRow(this)" class="bg-green-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-green-600">+</button>
                         <button type="button" onclick="removeRow(this)" class="bg-red-500 text-white w-5 h-5 flex items-center justify-center rounded-sm shadow text-xs hover:bg-red-600">-</button>
                     </div>
@@ -1097,23 +1093,54 @@
             return prefix + output;
         }
 
-        // ================= PDF 导出 =================
+        // ================= PDF 导出（彻底消除控制气泡及背景色） =================
         function downloadPDF() {
             saveCurrentContract();
             window.scrollTo(0, 0); 
             const element = document.getElementById('contract-content');
             
+            // 1. 隐藏所有 no-print 控件（包括第十七条复选框和加减行按钮）
+            const noPrintElements = element.querySelectorAll('.no-print');
+            noPrintElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+            // 2. 导出时临时去掉第十七条在编辑界面显示的淡黄色背景
+            const clause17 = document.getElementById('clause-17-content');
+            const hasAmberBg = clause17.classList.contains('bg-amber-50/50');
+            if (hasAmberBg) {
+                clause17.classList.remove('bg-amber-50/50');
+            }
+
             const inputs = element.querySelectorAll('input');
             const textareas = element.querySelectorAll('textarea');
-            inputs.forEach(input => { input.setAttribute('data-placeholder', input.placeholder || ''); input.placeholder = ''; input.setAttribute('value', input.value); });
-            textareas.forEach(textarea => { textarea.setAttribute('data-placeholder', textarea.placeholder || ''); textarea.placeholder = ''; textarea.textContent = textarea.value; });
+            inputs.forEach(input => { 
+                input.setAttribute('data-placeholder', input.placeholder || ''); 
+                input.placeholder = ''; 
+                input.setAttribute('value', input.value); 
+            });
+            textareas.forEach(textarea => { 
+                textarea.setAttribute('data-placeholder', textarea.placeholder || ''); 
+                textarea.placeholder = ''; 
+                textarea.textContent = textarea.value; 
+            });
             
             const btn = document.getElementById('pdf-btn');
-            const originalText = btn.innerHTML; btn.innerHTML = '正在生成...';
+            const originalText = btn.innerHTML; 
+            btn.innerHTML = '正在生成...';
 
             const partyBName = document.getElementById('top-partyB-name').innerText;
             const clientName = document.getElementById('top-partyA-name').value.trim() || '客户';
             const contractNo = document.getElementById('contract-no').value;
+
+            // 恢复页面状态
+            const restoreState = () => {
+                btn.innerHTML = originalText;
+                noPrintElements.forEach(el => el.style.removeProperty('display'));
+                if (hasAmberBg) {
+                    clause17.classList.add('bg-amber-50/50');
+                }
+                inputs.forEach(input => { input.placeholder = input.getAttribute('data-placeholder'); });
+                textareas.forEach(textarea => { textarea.placeholder = textarea.getAttribute('data-placeholder'); });
+            };
 
             html2pdf().set({
                 margin: 0, 
@@ -1121,11 +1148,7 @@
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(element).save().then(() => {
-                btn.innerHTML = originalText;
-                inputs.forEach(input => { input.placeholder = input.getAttribute('data-placeholder'); });
-                textareas.forEach(textarea => { textarea.placeholder = textarea.getAttribute('data-placeholder'); });
-            });
+            }).from(element).save().then(restoreState).catch(restoreState);
         }
     </script>
 </body>
