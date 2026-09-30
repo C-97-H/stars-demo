@@ -76,7 +76,7 @@
                 </button>
             </div>
             <span class="text-xs text-amber-300 bg-amber-950/70 px-2.5 py-1 rounded border border-amber-600/50 flex items-center">
-                ✨ 乙方含“安徽铜陵”即时自动勾选第十七条，去掉任一字即时取消
+                ✨ 甲方含“安徽铜陵”即时自动勾选第十七条，去掉任一字即时取消
             </span>
         </div>
         <div class="flex items-center gap-3">
@@ -141,11 +141,11 @@
                 <div class="flex flex-col gap-1 w-1/2">
                     <p class="flex items-end">
                         <span class="w-12 font-bold">甲方：</span>
-                        <span id="top-partyA-name" class="flex-1 border-b border-gray-500 pb-0.5 font-bold">深圳市三合一五金有限公司</span>
+                        <input type="text" id="top-partyA-name" oninput="handlePartyAInput(this.value, 'top')" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold text-indigo-900" placeholder="点击左侧客户或识别填入">
                     </p>
                     <p class="flex items-end">
                         <span class="w-12 font-bold">乙方：</span>
-                        <input type="text" id="top-partyB-name" oninput="handlePartyBInput(this.value, 'top')" class="flex-1 border-b border-gray-500 pb-0.5 focus:outline-none font-bold text-indigo-900" placeholder="点击左侧客户或识别填入">
+                        <span id="top-partyB-name" class="flex-1 border-b border-gray-500 pb-0.5 font-bold">深圳市三合一五金有限公司</span>
                     </p>
                 </div>
                 <div class="flex flex-col gap-1 w-[40%]">
@@ -209,7 +209,7 @@
 
                 <p>第十二条、违约责任：其他按合同法执行。</p>
                 <p>第十三条、合同纠纷解决方式：本合同在履行过程中发生的争议，由双方当事人协商解决。</p>
-                <p>第十四条、本合同一式贰份，乙方壹份，甲方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
+                <p>第十四条、本合同一式贰份，甲方壹份，乙方壹份。本合同经各方法定代表人或授权代表签字并加盖印章后生效。</p>
                 <p>第十五条、其它约定事项：本合同未尽事宜，双方协商解决。</p>
                 <p>第十六条、产品名称、金额、供货时间及数量。</p>
 
@@ -232,25 +232,21 @@
             <table class="box-table text-[11px]">
                 <tbody>
                     <tr class="align-top">
-                        <!-- 甲方区域 -->
-                        <td class="w-1/2 px-2 py-1 relative overflow-hidden">
-                            <img id="partyA_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-1 w-[150px] h-[150px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
-
-                            <div class="flex flex-col gap-1 relative z-0">
+                        <!-- 甲方（需方/客户） -->
+                        <td class="w-1/2 px-2 py-1">
+                            <div class="flex flex-col gap-1">
                                 <p class="font-bold mb-0.5">甲方：</p>
                                 <div class="flex items-center">
                                     <span class="w-[6.5rem]">单位名称（章）：</span>
-                                    <input type="text" id="partyA_name" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
+                                    <input type="text" id="partyA_name" oninput="handlePartyAInput(this.value, 'bottom')" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium text-indigo-900">
                                 </div>
                                 <div class="flex items-start">
                                     <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
                                     <textarea id="partyA_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
                                 </div>
-                                <div class="flex items-end h-8">
-                                    <span class="w-[6.5rem] mb-0.5">法定/委托代理人：</span>
-                                    <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
-                                        <img id="partyA_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-9 w-auto z-20" alt="签名" onerror="this.style.display='none'">
-                                    </div>
+                                <div class="flex items-center h-8">
+                                    <span class="w-[6.5rem]">法定/委托代理人：</span>
+                                    <input type="text" id="partyA_agent" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
                                 </div>
                                 <div class="flex items-center">
                                     <span class="w-[6.5rem]">电话：</span>
@@ -270,22 +266,26 @@
                                 </div>
                             </div>
                         </td>
-                        
-                        <!-- 乙方 -->
-                        <td class="w-1/2 px-2 py-1">
-                            <div class="flex flex-col gap-1">
+
+                        <!-- 乙方（供方/我方） -->
+                        <td class="w-1/2 px-2 py-1 relative overflow-hidden">
+                            <img id="partyB_seal" src="./seal.png" class="realistic-stamp absolute right-4 top-1 w-[150px] h-[150px] opacity-95 z-10" alt="公司印章" onerror="this.style.display='none'">
+
+                            <div class="flex flex-col gap-1 relative z-0">
                                 <p class="font-bold mb-0.5">乙方：</p>
                                 <div class="flex items-center">
                                     <span class="w-[6.5rem]">单位名称（章）：</span>
-                                    <input type="text" id="partyB_name" oninput="handlePartyBInput(this.value, 'bottom')" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium text-indigo-900">
+                                    <input type="text" id="partyB_name" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none font-medium">
                                 </div>
                                 <div class="flex items-start">
                                     <span class="w-[6.5rem] mt-[1px]">单位地址：</span>
                                     <textarea id="partyB_address" rows="1" oninput="adjustTextareaHeight(this)" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none resize-none overflow-hidden p-0 leading-snug bg-transparent"></textarea>
                                 </div>
-                                <div class="flex items-center h-8">
-                                    <span class="w-[6.5rem]">法定/委托代理人：</span>
-                                    <input type="text" id="partyB_agent" class="flex-1 border-b border-dotted border-gray-400 focus:outline-none">
+                                <div class="flex items-end h-8">
+                                    <span class="w-[6.5rem] mb-0.5">法定/委托代理人：</span>
+                                    <div class="flex-1 border-b border-dotted border-gray-400 h-full relative flex items-end justify-start">
+                                        <img id="partyB_sign" src="./sign.jpg" class="realistic-stamp absolute bottom-0 left-2 h-9 w-auto z-20" alt="签名" onerror="this.style.display='none'">
+                                    </div>
                                 </div>
                                 <div class="flex items-center">
                                     <span class="w-[6.5rem]">电话：</span>
@@ -324,7 +324,7 @@
             <div class="p-5">
                 <p class="text-xs text-gray-500 mb-2 leading-relaxed">
                     支持粘贴微信聊天、发票抬头或OCR复制的文本。<br>
-                    <span class="text-indigo-600 font-semibold">自动提取名称、税号、开户行、账号、地址及联系人，并存入历史库。</span>
+                    <span class="text-indigo-600 font-semibold">自动提取名称、税号、开户行、账号、地址及联系人填入甲方，并存入历史库。</span>
                 </p>
                 <textarea id="parse-textarea" rows="7" class="w-full border border-gray-300 rounded-lg p-3 text-xs focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition font-sans leading-relaxed" placeholder="示例：&#10;名称：安徽铜陵XX铜业有限公司&#10;纳税人识别号：91340700MA2XXXXXXX&#10;开户行及账号：建行铜陵开发区支行 3405018655...&#10;地址、电话：安徽省铜陵市经济技术开发区... 0562-5888888"></textarea>
             </div>
@@ -387,24 +387,25 @@
                 btnSanheyi.className = 'px-4 py-1.5 bg-slate-600 text-white text-sm font-bold hover:bg-slate-500 transition border-r border-indigo-800';
             }
 
-            document.getElementById('top-partyA-name').innerText = data.name;
-            document.getElementById('partyA_name').value = data.name;
-            document.getElementById('partyA_tax').value = data.tax;
-            document.getElementById('partyA_bank').value = data.bank;
-            document.getElementById('partyA_account').value = data.account;
+            // 赋值到乙方
+            document.getElementById('top-partyB-name').innerText = data.name;
+            document.getElementById('partyB_name').value = data.name;
+            document.getElementById('partyB_tax').value = data.tax;
+            document.getElementById('partyB_bank').value = data.bank;
+            document.getElementById('partyB_account').value = data.account;
             
-            const addrEl = document.getElementById('partyA_address');
+            const addrEl = document.getElementById('partyB_address');
             addrEl.value = data.address;
             setTimeout(() => adjustTextareaHeight(addrEl), 0);
             
-            document.getElementById('partyA_phone').value = data.phone;
+            document.getElementById('partyB_phone').value = data.phone;
             
             // 联动更新税率文字及表格表头
             document.getElementById('tax-term-text').innerText = data.taxText;
             document.getElementById('th-price-tax').innerText = data.priceHeader;
             document.getElementById('th-total-tax').innerText = data.totalHeader;
 
-            const sealImg = document.getElementById('partyA_seal');
+            const sealImg = document.getElementById('partyB_seal');
             if (data.showSeal) {
                 sealImg.src = data.sealSrc;
                 sealImg.style.display = 'block';
@@ -427,18 +428,18 @@
         }
 
         // 严格检测“安徽铜陵”四个字：有则勾选开启，缺少任何字即时取消勾选
-        function checkPartyBForTonglingRule(name) {
+        function checkPartyAForTonglingRule(name) {
             const isMatch = typeof name === 'string' && name.includes('安徽铜陵');
             toggleClause17(isMatch);
         }
 
-        function handlePartyBInput(value, source) {
+        function handlePartyAInput(value, source) {
             if (source === 'top') {
-                document.getElementById('partyB_name').value = value;
+                document.getElementById('partyA_name').value = value;
             } else {
-                document.getElementById('top-partyB-name').value = value;
+                document.getElementById('top-partyA-name').value = value;
             }
-            checkPartyBForTonglingRule(value);
+            checkPartyAForTonglingRule(value);
         }
 
         function getFormattedCurrentDateTime() {
@@ -483,14 +484,14 @@
             if (!confirm("确定要新建清空当前合同内容吗？")) return;
             initDateAndNo();
             document.getElementById('sign-place').value = '广东深圳';
-            document.getElementById('top-partyB-name').value = '';
-            document.getElementById('partyB_name').value = '';
-            document.getElementById('partyB_tax').value = '';
-            document.getElementById('partyB_bank').value = '';
-            document.getElementById('partyB_account').value = '';
-            document.getElementById('partyB_address').value = '';
-            document.getElementById('partyB_phone').value = '';
-            document.getElementById('partyB_agent').value = '';
+            document.getElementById('top-partyA-name').value = '';
+            document.getElementById('partyA_name').value = '';
+            document.getElementById('partyA_tax').value = '';
+            document.getElementById('partyA_bank').value = '';
+            document.getElementById('partyA_account').value = '';
+            document.getElementById('partyA_address').value = '';
+            document.getElementById('partyA_phone').value = '';
+            document.getElementById('partyA_agent').value = '';
             document.getElementById('delivery-days').value = '7';
 
             const tbody = document.getElementById('product-tbody');
@@ -589,16 +590,16 @@
         }
 
         function saveCurrentClient() {
-            const name = document.getElementById('partyB_name').value.trim();
+            const name = document.getElementById('partyA_name').value.trim();
             if(!name) return;
             const client = {
                 name: name,
-                tax: document.getElementById('partyB_tax').value.trim(),
-                bank: document.getElementById('partyB_bank').value.trim(),
-                account: document.getElementById('partyB_account').value.trim(),
-                address: document.getElementById('partyB_address').value.trim(),
-                phone: document.getElementById('partyB_phone').value.trim(),
-                agent: document.getElementById('partyB_agent').value.trim()
+                tax: document.getElementById('partyA_tax').value.trim(),
+                bank: document.getElementById('partyA_bank').value.trim(),
+                account: document.getElementById('partyA_account').value.trim(),
+                address: document.getElementById('partyA_address').value.trim(),
+                phone: document.getElementById('partyA_phone').value.trim(),
+                agent: document.getElementById('partyA_agent').value.trim()
             };
             savedClients[name] = client;
             localStorage.setItem('contract_clients', JSON.stringify(savedClients));
@@ -608,20 +609,20 @@
         function fillClient(name) {
             const data = savedClients[name];
             if(!data) return;
-            document.getElementById('partyB_name').value = data.name || '';
-            document.getElementById('top-partyB-name').value = data.name || '';
-            document.getElementById('partyB_tax').value = data.tax || '';
-            document.getElementById('partyB_bank').value = data.bank || '';
-            document.getElementById('partyB_account').value = data.account || '';
+            document.getElementById('partyA_name').value = data.name || '';
+            document.getElementById('top-partyA-name').value = data.name || '';
+            document.getElementById('partyA_tax').value = data.tax || '';
+            document.getElementById('partyA_bank').value = data.bank || '';
+            document.getElementById('partyA_account').value = data.account || '';
             
-            const addrEl = document.getElementById('partyB_address');
+            const addrEl = document.getElementById('partyA_address');
             addrEl.value = data.address || '';
             adjustTextareaHeight(addrEl);
 
-            document.getElementById('partyB_phone').value = data.phone || '';
-            document.getElementById('partyB_agent').value = data.agent || '';
+            document.getElementById('partyA_phone').value = data.phone || '';
+            document.getElementById('partyA_agent').value = data.agent || '';
 
-            checkPartyBForTonglingRule(data.name || '');
+            checkPartyAForTonglingRule(data.name || '');
         }
 
         // ================= 历史合同保存与复原 =================
@@ -659,14 +660,14 @@
                 signDate: document.getElementById('sign-date').value,
                 deliveryDays: document.getElementById('delivery-days').value || '7',
                 enableClause17: document.getElementById('toggle-clause-17').checked,
-                partyB: {
-                    name: document.getElementById('partyB_name').value,
-                    tax: document.getElementById('partyB_tax').value,
-                    bank: document.getElementById('partyB_bank').value,
-                    account: document.getElementById('partyB_account').value,
-                    address: document.getElementById('partyB_address').value,
-                    phone: document.getElementById('partyB_phone').value,
-                    agent: document.getElementById('partyB_agent').value,
+                partyA: {
+                    name: document.getElementById('partyA_name').value,
+                    tax: document.getElementById('partyA_tax').value,
+                    bank: document.getElementById('partyA_bank').value,
+                    account: document.getElementById('partyA_account').value,
+                    address: document.getElementById('partyA_address').value,
+                    phone: document.getElementById('partyA_phone').value,
+                    agent: document.getElementById('partyA_agent').value,
                 },
                 items: items,
                 updatedAt: new Date().toLocaleString('zh-CN', { hour12: false })
@@ -693,7 +694,8 @@
             if (keyword) {
                 nos = nos.filter(no => {
                     const c = savedContracts[no];
-                    return no.includes(keyword) || (c.partyB && c.partyB.name.toLowerCase().includes(keyword.toLowerCase()));
+                    const client = c.partyA || c.partyB;
+                    return no.includes(keyword) || (client && client.name.toLowerCase().includes(keyword.toLowerCase()));
                 });
             }
 
@@ -712,9 +714,10 @@
                 title.className = 'text-[12px] font-bold text-gray-800 pr-7 truncate';
                 title.innerText = `编号: ${no}`;
 
+                const client = contract.partyA || contract.partyB;
                 const clientName = document.createElement('p');
                 clientName.className = 'text-[11px] text-indigo-900 font-semibold mt-0.5 truncate';
-                clientName.innerText = contract.partyB?.name || '未知乙方';
+                clientName.innerText = client?.name || '未知甲方';
 
                 const sub = document.createElement('p');
                 sub.className = 'text-[10px] text-gray-400 mt-1 truncate';
@@ -758,22 +761,24 @@
             document.getElementById('sign-place').value = contract.signPlace || '广东深圳';
             document.getElementById('delivery-days').value = contract.deliveryDays || '7';
 
-            if (contract.partyB) {
-                document.getElementById('partyB_name').value = contract.partyB.name || '';
-                document.getElementById('top-partyB-name').value = contract.partyB.name || '';
-                document.getElementById('partyB_tax').value = contract.partyB.tax || '';
-                document.getElementById('partyB_bank').value = contract.partyB.bank || '';
-                document.getElementById('partyB_account').value = contract.partyB.account || '';
-                const addrEl = document.getElementById('partyB_address');
-                addrEl.value = contract.partyB.address || '';
+            // 兼容之前保存的甲方或乙方数据
+            const partyData = contract.partyA || contract.partyB;
+            if (partyData) {
+                document.getElementById('partyA_name').value = partyData.name || '';
+                document.getElementById('top-partyA-name').value = partyData.name || '';
+                document.getElementById('partyA_tax').value = partyData.tax || '';
+                document.getElementById('partyA_bank').value = partyData.bank || '';
+                document.getElementById('partyA_account').value = partyData.account || '';
+                const addrEl = document.getElementById('partyA_address');
+                addrEl.value = partyData.address || '';
                 adjustTextareaHeight(addrEl);
-                document.getElementById('partyB_phone').value = contract.partyB.phone || '';
-                document.getElementById('partyB_agent').value = contract.partyB.agent || '';
+                document.getElementById('partyA_phone').value = partyData.phone || '';
+                document.getElementById('partyA_agent').value = partyData.agent || '';
             }
 
             toggleClause17(contract.enableClause17 ?? false);
-            if (contract.partyB && contract.partyB.name) {
-                checkPartyBForTonglingRule(contract.partyB.name);
+            if (partyData && partyData.name) {
+                checkPartyAForTonglingRule(partyData.name);
             }
 
             const tbody = document.getElementById('product-tbody');
@@ -800,7 +805,7 @@
             const text = document.getElementById('parse-textarea').value;
             if(!text.trim()) return closeParseModal();
 
-            const nameMatch = text.match(/(?:公司名称|单位名称|名称|全称|抬头|购方名称|乙方)[:：\s]*([^\n\r,，。]+)/i) 
+            const nameMatch = text.match(/(?:公司名称|单位名称|名称|全称|抬头|购方名称|甲方)[:：\s]*([^\n\r,，。]+)/i) 
                            || text.match(/^([^\n\r]+(?:公司|商行|企业|厂|店|合作社|集团))/m);
 
             const taxMatch = text.match(/(?:纳税人识别号|信用代码|统一社会信用代码|税号|税\s*号)[:：\s]*([a-zA-Z0-9]{15,20})/i)
@@ -861,20 +866,20 @@
 
             const companyName = nameMatch ? nameMatch[1].replace(/^[：:\s]+/, '').trim() : '';
             if (companyName) {
-                document.getElementById('partyB_name').value = companyName;
-                document.getElementById('top-partyB-name').value = companyName;
-                checkPartyBForTonglingRule(companyName);
+                document.getElementById('partyA_name').value = companyName;
+                document.getElementById('top-partyA-name').value = companyName;
+                checkPartyAForTonglingRule(companyName);
             }
-            if (taxMatch) document.getElementById('partyB_tax').value = taxMatch[1].trim();
-            if (bank) document.getElementById('partyB_bank').value = bank;
-            if (account) document.getElementById('partyB_account').value = account;
+            if (taxMatch) document.getElementById('partyA_tax').value = taxMatch[1].trim();
+            if (bank) document.getElementById('partyA_bank').value = bank;
+            if (account) document.getElementById('partyA_account').value = account;
             if (address) {
-                const bAddrEl = document.getElementById('partyB_address');
-                bAddrEl.value = address;
-                adjustTextareaHeight(bAddrEl);
+                const aAddrEl = document.getElementById('partyA_address');
+                aAddrEl.value = address;
+                adjustTextareaHeight(aAddrEl);
             }
-            if (phone) document.getElementById('partyB_phone').value = phone;
-            if (agent) document.getElementById('partyB_agent').value = agent;
+            if (phone) document.getElementById('partyA_phone').value = phone;
+            if (agent) document.getElementById('partyA_agent').value = agent;
             
             saveCurrentClient();
             document.getElementById('parse-textarea').value = '';
@@ -1106,12 +1111,13 @@
             const btn = document.getElementById('pdf-btn');
             const originalText = btn.innerHTML; btn.innerHTML = '正在生成...';
 
-            const partyAName = document.getElementById('top-partyA-name').innerText;
+            const partyBName = document.getElementById('top-partyB-name').innerText;
+            const clientName = document.getElementById('top-partyA-name').value.trim() || '客户';
             const contractNo = document.getElementById('contract-no').value;
 
             html2pdf().set({
                 margin: 0, 
-                filename: `${partyAName}_${contractNo}_购销合同.pdf`,
+                filename: `${partyBName}_${clientName}_${contractNo}_购销合同.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
